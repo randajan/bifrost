@@ -1,5 +1,5 @@
 
-const _privates = new Map(); //only one
+const _privates = new WeakMap();
 
 const createThreads = _=>{
     const t = new Set();
@@ -39,8 +39,7 @@ export class ClientBridge {
         const _p = {
             socket,
             threadLock:createThreads(),
-            channels:new Map(),
-            translator:c=>c
+            channels:new Map()
         }
 
         Object.defineProperties(this, {
@@ -50,47 +49,28 @@ export class ClientBridge {
         _privates.set(this, _p);
     }
 
-    channelTranslate(translator) {
-        const _p = _privates.get(this);
-        const { channels, socket, threadLock } = _p;
-        const trFrom = _p.translator;
-        const trTo = _p.translator = translator;
-
-        channels.forEach((receiver, channel)=>{
-            const from = trFrom(channel);
-            const to = trTo(channel);
-
-            if (from === to) { return; }
-
-            deaf(socket, from);
-            hear(socket, to, receiver, threadLock);
-        });
-    }
-
     async threadLock(channel, execute, ...args) {
         return _privates.get(this).threadLock(channel, execute, ...args);
     }
 
     async tx(channel, transceiver) {
-        const { socket, threadLock, translator } = _privates.get(this);
+        const { socket, threadLock } = _privates.get(this);
         return threadLock(channel, async _=>{
             const rnbl = typeof transceiver === "function";
-            const ch = translator(channel);
-            return rnbl ? transceiver(body=>emit(socket, ch, body)) : emit(socket, ch, transceiver);
+            return rnbl ? transceiver(body=>emit(socket, channel, body)) : emit(socket, channel, transceiver);
         });
     }
 
     async rx(channel, receiver) {
-        const { socket, threadLock, channels, translator } = _privates.get(this);
+        const { socket, threadLock, channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(`Bridge channel '${channel}' allready exist!`); }
 
         channels.set(channel, receiver);
-        hear(socket, translator(channel), receiver, threadLock);
+        hear(socket, channel, receiver, threadLock);
 
         return _=>{
             channels.delete(channel);
-            const ch = _privates.get(this).translator(channel);
-            deaf(socket, ch);
+            deaf(socket, channel);
         }
     }
 

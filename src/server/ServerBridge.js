@@ -1,6 +1,6 @@
 import { SocketGroups } from "./SocketsGroups";
 
-const _privates = new Map(); //only one
+const _privates = new WeakMap();
 
 const emit = async (socket, channel, body)=>{
     return new Promise((res, rej)=>{
@@ -29,8 +29,7 @@ export class ServerBridge {
         const _p = {
             channels:new Map(),
             groups:new Map(),
-            sockets:new Set(),
-            translator:c=>c
+            sockets:new Set()
         }
 
         Object.defineProperties(this, {
@@ -40,31 +39,12 @@ export class ServerBridge {
 
         io.on("connection", socket=>{
             _p.sockets.add(socket);
-            _p.channels.forEach((receiver, channel)=>{ hear(socket, _p.translator(channel), receiver); });
+            _p.channels.forEach((receiver, channel)=>{ hear(socket, channel, receiver); });
             socket.on("disconnect", _=>{ _p.sockets.delete(socket); });
         });
 
         _privates.set(this, _p);
 
-    }
-
-    channelTranslate(translator) {
-        const _p = _privates.get(this);
-        const { channels, sockets } = _p;
-        const trFrom = _p.translator;
-        const trTo = _p.translator = translator;
-
-        channels.forEach((receiver, channel)=>{
-            const from = trFrom(channel);
-            const to = trTo(channel);
-
-            if (from === to) { return; }
-
-            sockets.forEach((socket)=>{
-                deaf(socket, from);
-                hear(socket, to, receiver);
-            });
-        });
     }
 
     createGroup(name, grouper) {
@@ -82,26 +62,23 @@ export class ServerBridge {
     }
 
     tx(channel, transceiver, sockets) {
-        const { translator } = _privates.get(this);
         const rnbl = typeof transceiver === "function";
-        const ch = translator(channel);
         if (!sockets) { sockets = this.sockets; }
         return Promise.all(sockets.map(async socket=>{
-            return rnbl ? transceiver(body=>emit(socket, ch, body), socket) : emit(socket, ch, transceiver);
+            return rnbl ? transceiver(body=>emit(socket, channel, body), socket) : emit(socket, channel, transceiver);
         }));
     }
 
     rx(channel, receiver) {
-        const { channels, sockets, translator } = _privates.get(this);
+        const { channels, sockets } = _privates.get(this);
         if (channels.has(channel)) { throw Error(`Bridge rx channel '${channel}' allready registered!`); }
 
         channels.set(channel, receiver);
-        sockets.forEach(socket=>{ hear(socket, translator(channel), receiver); });
+        sockets.forEach(socket=>{ hear(socket, channel, receiver); });
 
         return _=>{
             channels.delete(channel);
-            const ch = _privates.get(this).translator(channel);
-            sockets.forEach(socket=>{ deaf(socket, ch); });
+            sockets.forEach(socket=>{ deaf(socket, channel); });
         }
     }
 
