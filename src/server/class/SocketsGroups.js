@@ -1,4 +1,5 @@
 
+const _privates = new WeakMap();
 
 export class SocketGroups {
 
@@ -28,10 +29,8 @@ export class SocketGroups {
             add(toId, socket);
         }
 
-        Object.defineProperties(this, {
-            bridge:{ enumerable:true, value:bridge },
-            reset:{ value:_=>{ bySocket.forEach(set); } },
-            get:{ value:id=>(byId.has(id) ? [...byId.get(id)] : []) }
+        Object.defineProperty(this, "bridge", {
+            value:bridge, enumerable:true
         });
 
         bridge.io.on("connection", socket=>{
@@ -39,10 +38,22 @@ export class SocketGroups {
             socket.on("disconnect", _=>{ remove(bySocket.get(socket), socket); });
         });
 
+        _privates.set(this, { byId, bySocket, remove, add, set });
+
     }
 
-    async tx(channel, transceiver, gid) {
-        return this.bridge.tx(channel, transceiver, this.get(gid));
+    reset() {
+        const { bySocket, set } = _privates.get(this);
+        bySocket.forEach(set);
+    }
+
+    get(id) {
+        const { byId } = _privates.get(this);
+        return byId.has(id) ? [...byId.get(id)] : [];
+    }
+
+    async tx(channel, transceiver, id) {
+        return this.bridge.tx(channel, transceiver, this.get(id));
     }
 
 }

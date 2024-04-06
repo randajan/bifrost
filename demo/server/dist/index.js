@@ -62,6 +62,31 @@ import { createServer as createServerHTTP } from "http";
 import { Server as IO } from "socket.io";
 
 // dist/server/index.js
+var emit = async (socket, channel, body) => {
+  return new Promise((res, rej) => {
+    socket.emit(channel, body, (ok, body2) => {
+      if (ok) {
+        res(body2);
+      } else {
+        rej(body2);
+      }
+    });
+  });
+};
+var hear = (socket, channel, receiver) => {
+  socket.on(channel, async (body, ack) => {
+    try {
+      await ack(true, await receiver(socket, body));
+    } catch (err) {
+      console.warn(err);
+      await ack(false, `BE > ${err}`);
+    }
+  });
+};
+var deaf = (socket, channel) => {
+  socket.off(channel);
+};
+var _privates = /* @__PURE__ */ new WeakMap();
 var SocketGroups = class {
   constructor(bridge2, grouper) {
     const byId = /* @__PURE__ */ new Map();
@@ -90,12 +115,9 @@ var SocketGroups = class {
       remove(fromId, socket);
       add(toId, socket);
     };
-    Object.defineProperties(this, {
-      bridge: { enumerable: true, value: bridge2 },
-      reset: { value: (_) => {
-        bySocket.forEach(set);
-      } },
-      get: { value: (id) => byId.has(id) ? [...byId.get(id)] : [] }
+    Object.defineProperty(this, "bridge", {
+      value: bridge2,
+      enumerable: true
     });
     bridge2.io.on("connection", (socket) => {
       add(grouper(socket), socket);
@@ -103,36 +125,21 @@ var SocketGroups = class {
         remove(bySocket.get(socket), socket);
       });
     });
+    _privates.set(this, { byId, bySocket, remove, add, set });
   }
-  async tx(channel, transceiver, gid) {
-    return this.bridge.tx(channel, transceiver, this.get(gid));
+  reset() {
+    const { bySocket, set } = _privates.get(this);
+    bySocket.forEach(set);
+  }
+  get(id) {
+    const { byId } = _privates.get(this);
+    return byId.has(id) ? [...byId.get(id)] : [];
+  }
+  async tx(channel, transceiver, id) {
+    return this.bridge.tx(channel, transceiver, this.get(id));
   }
 };
-var _privates = /* @__PURE__ */ new WeakMap();
-var emit = async (socket, channel, body) => {
-  return new Promise((res, rej) => {
-    socket.emit(channel, body, (ok, body2) => {
-      if (ok) {
-        res(body2);
-      } else {
-        rej(body2);
-      }
-    });
-  });
-};
-var hear = (socket, channel, receiver) => {
-  socket.on(channel, async (body, ack) => {
-    try {
-      await ack(true, await receiver(socket, body));
-    } catch (err) {
-      console.warn(err);
-      await ack(false, `BE > ${err}`);
-    }
-  });
-};
-var deaf = (socket, channel) => {
-  socket.off(channel);
-};
+var _privates2 = /* @__PURE__ */ new WeakMap();
 var enumerable2 = true;
 var ServerBridge = class {
   constructor(io2) {
@@ -154,10 +161,10 @@ var ServerBridge = class {
         _p.sockets.delete(socket);
       });
     });
-    _privates.set(this, _p);
+    _privates2.set(this, _p);
   }
   createGroup(name, grouper) {
-    const { groups } = _privates.get(this);
+    const { groups } = _privates2.get(this);
     if (groups.has(name)) {
       throw Error(`Bridge group '${name}' allready exist!`);
     }
@@ -166,7 +173,7 @@ var ServerBridge = class {
     return group;
   }
   getGroup(name) {
-    const { groups } = _privates.get(this);
+    const { groups } = _privates2.get(this);
     if (!groups.has(name)) {
       throw Error(`Bridge group '${name}' doesn't exist!`);
     }
@@ -182,7 +189,7 @@ var ServerBridge = class {
     }));
   }
   rx(channel, receiver) {
-    const { channels, sockets } = _privates.get(this);
+    const { channels, sockets } = _privates2.get(this);
     if (channels.has(channel)) {
       throw Error(`Bridge rx channel '${channel}' allready registered!`);
     }

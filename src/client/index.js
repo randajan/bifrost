@@ -1,4 +1,4 @@
-import { ClientBridge } from "./ClientBridge";
+import { ClientBridge } from "./class/ClientBridge";
 
 export {
     ClientBridge

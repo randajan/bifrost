@@ -1,26 +1,7 @@
+import { deaf, emit, hear } from "../tools";
 import { SocketGroups } from "./SocketsGroups";
 
 const _privates = new WeakMap();
-
-const emit = async (socket, channel, body)=>{
-    return new Promise((res, rej)=>{
-        socket.emit(channel, body, (ok, body)=>{
-            if (ok) { res(body); } else { rej(body); }
-        });
-    });
-}
-
-const hear = (socket, channel, receiver)=>{
-    socket.on(channel, async (body, ack)=>{
-        try { await ack(true, await receiver(socket, body)); }
-        catch(err) {
-            console.warn(err);
-            await ack(false, `BE > ${err}`);
-        }
-    });
-}
-
-const deaf = (socket, channel)=>{ socket.off(channel); }
 
 const enumerable = true;
 export class ServerBridge {

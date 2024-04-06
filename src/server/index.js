@@ -1,4 +1,4 @@
-import { ServerBridge } from "./ServerBridge";
+import { ServerBridge } from "./class/ServerBridge";
 
 export {
     ServerBridge

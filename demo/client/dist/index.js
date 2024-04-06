@@ -3778,28 +3778,6 @@
   });
 
   // dist/client/index.js
-  var _privates = /* @__PURE__ */ new WeakMap();
-  var createThreads = (_) => {
-    const t = /* @__PURE__ */ new Set();
-    return async (name, exe, ...args) => {
-      if (t.has(name)) {
-        return;
-      }
-      t.add(name);
-      let res, err;
-      try {
-        res = await exe(...args);
-      } catch (e) {
-        err = e;
-      }
-      t.delete(name);
-      if (err) {
-        throw err;
-      } else {
-        return res;
-      }
-    };
-  };
   var emit = async (socket2, channel, body) => {
     return new Promise((res, rej) => {
       socket2.emit(channel, body, (ok, body2) => {
@@ -3811,10 +3789,10 @@
       });
     });
   };
-  var hear = (socket2, channel, receiver, threadLock) => {
+  var hear = (socket2, channel, receiver, threads) => {
     socket2.on(channel, async (body, ack) => {
       try {
-        await ack(true, await threadLock(channel, receiver, socket2, body));
+        await ack(true, await threads.lock(channel, receiver, socket2, body));
       } catch (err) {
         console.warn(err);
         await ack(false, `FE > ${err}`);
@@ -3824,11 +3802,37 @@
   var deaf = (socket2, channel) => {
     socket2.off(channel);
   };
+  var Threads = class {
+    constructor() {
+      this.list = /* @__PURE__ */ new Set();
+    }
+    async lock(channel, exe, ...args) {
+      const { list } = this;
+      if (list.has(channel)) {
+        return;
+      }
+      list.add(channel);
+      let res, err;
+      try {
+        res = await exe(...args);
+      } catch (e) {
+        err = e;
+      }
+      list.delete(channel);
+      if (err) {
+        throw err;
+      } else {
+        return res;
+      }
+    }
+  };
+  var _privates = /* @__PURE__ */ new WeakMap();
   var ClientBridge = class {
     constructor(socket2) {
       const _p = {
         socket: socket2,
-        threadLock: createThreads(),
+        txThreads: new Threads(),
+        rxThreads: new Threads(),
         channels: /* @__PURE__ */ new Map()
       };
       Object.defineProperties(this, {
@@ -3836,23 +3840,27 @@
       });
       _privates.set(this, _p);
     }
-    async threadLock(channel, execute, ...args) {
-      return _privates.get(this).threadLock(channel, execute, ...args);
+    async txLock(channel, execute, ...args) {
+      return _privates.get(this).txThreads.lock(channel, execute, ...args);
+    }
+    async rxLock(channel, execute, ...args) {
+      return _privates.get(this).rxThreads.lock(channel, execute, ...args);
     }
     async tx(channel, transceiver) {
-      const { socket: socket2, threadLock } = _privates.get(this);
-      return threadLock(channel, async (_) => {
-        const rnbl = typeof transceiver === "function";
-        return rnbl ? transceiver((body) => emit(socket2, channel, body)) : emit(socket2, channel, transceiver);
-      });
+      const { socket: socket2, rxThreads } = _privates.get(this);
+      const rnbl = typeof transceiver === "function";
+      if (!rnbl) {
+        return rxThreads.lock(channel, emit, socket2, channel, transceiver);
+      }
+      return rxThreads.lock(channel, (_) => transceiver((body) => emit(socket2, channel, body)));
     }
     async rx(channel, receiver) {
-      const { socket: socket2, threadLock, channels } = _privates.get(this);
+      const { socket: socket2, txThreads, channels } = _privates.get(this);
       if (channels.has(channel)) {
         throw Error(`Bridge channel '${channel}' allready exist!`);
       }
       channels.set(channel, receiver);
-      hear(socket2, channel, receiver, threadLock);
+      hear(socket2, channel, receiver, txThreads);
       return (_) => {
         channels.delete(channel);
         deaf(socket2, channel);
