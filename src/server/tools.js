@@ -9,7 +9,7 @@ export const emit = async (socket, channel, body)=>{
 export const hear = (socket, channel, receiver)=>{
     socket.on(channel, async (body, ack)=>{
         try { await ack(true, await receiver(socket, body)); }
-        catch(err) {
+        catch (err) {
             console.warn(err);
             await ack(false, `BE > ${err}`);
         }
