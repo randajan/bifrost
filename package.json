@@ -1,0 +1,38 @@
+{
+  "name": "@randajan/bifrost",
+  "version": "0.0.1",
+  "description": "Teleport your data from backend to frontend effortless",
+  "repository": "randajan/bifrost",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "start": "set NODE_ENV=dev&& node ./index.js",
+    "build": "set NODE_ENV=prod&& node ./index.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@randajan/simple-lib": "^2.3.1"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "types",
+    "tool"
+  ],
+  "homepage": "https://github.com/randajan/bifrost",
+  "bugs": {
+    "url": "https://github.com/randajan/bifrost/issues"
+  },
+  "author": {
+    "name": "Jan Randa",
+    "email": "jnranda@gmail.com",
+    "url": "https://www.linkedin.com/in/randajan/"
+  }
+}

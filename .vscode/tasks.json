@@ -1,0 +1,62 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "NPM publish",
+            "type": "shell",
+            "command": "npm publish --access=public",
+            "dependsOn": [
+                "Rise Version"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Rise Version",
+            "type": "shell",
+            "command": "npm version ${input:npmVersion}",
+            "dependsOn": [
+                "GIT commit"
+            ]
+        },
+        {
+            "label": "GIT commit",
+            "type": "shell",
+            "command": "git add .; git commit -m '${input:commit}'; git push origin main"
+        },
+        {
+            "type": "npm",
+            "script": "build",
+            "group": "build",
+            "problemMatcher": [],
+            "label": "npm: build",
+            "detail": "node ./build.js"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "commit",
+            "description": "Git commit message:",
+            "default": "",
+            "type": "promptString"
+        },
+        {
+            "id": "npmVersion",
+            "description": "Npm Version:",
+            "default": "patch",
+            "type": "pickString",
+            "options": [
+                "patch",
+                "minor",
+                "major",
+                "prepatch",
+                "preminor",
+                "premajor"
+              ],
+        }
+    ]
+}
