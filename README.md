@@ -70,7 +70,7 @@ bifrost.rx("testChannel", (socket, { msg }) => {
 import { createServer as createServerHTTP } from "http";
 import { Server as IO } from "socket.io";
 
-import { ServerRouter } from "bifrost";
+import { ServerRouter } from "@randajan/bifrost/server";
 
 // Create simple HTTP server
 const http = createServerHTTP();
