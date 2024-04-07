@@ -1,9 +1,7 @@
-import { ClientBridge } from "./class/ClientBridge";
+import BifrostRouter from "./router";
 
 export {
-    ClientBridge
+    BifrostRouter
 }
-
-export default ClientBridge;
 
 

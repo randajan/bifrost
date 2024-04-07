@@ -1,7 +1,6 @@
-import { ServerBridge } from "./class/ServerBridge";
+import BifrostRouter from "./router";
 
 export {
-    ServerBridge
+    BifrostRouter
 }
 
-export default ServerBridge;

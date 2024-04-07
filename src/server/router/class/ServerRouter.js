@@ -1,10 +1,10 @@
-import { deaf, emit, hear } from "../tools";
+import { deaf, emit, hear } from "../../../arc/tools";
 import { SocketGroups } from "./SocketsGroups";
 
 const _privates = new WeakMap();
 
 const enumerable = true;
-export class ServerBridge {
+export class ServerRouter {
 
     constructor(io) {
         const _p = {
@@ -30,7 +30,7 @@ export class ServerBridge {
 
     createGroup(name, grouper) {
         const { groups } = _privates.get(this);
-        if (groups.has(name)) { throw Error(`Bridge group '${name}' allready exist!`); }
+        if (groups.has(name)) { throw Error(`Bifrost router group '${name}' allready exist!`); }
         const group = new SocketGroups(this, grouper);
         groups.set(name, group);
         return group;
@@ -38,7 +38,7 @@ export class ServerBridge {
 
     getGroup(name) {
         const { groups } = _privates.get(this);
-        if (!groups.has(name)) { throw Error(`Bridge group '${name}' doesn't exist!`); }
+        if (!groups.has(name)) { throw Error(`Bifrost router group '${name}' doesn't exist!`); }
         return groups.get(name);
     }
 
@@ -52,7 +52,7 @@ export class ServerBridge {
 
     rx(channel, receiver) {
         const { channels, sockets } = _privates.get(this);
-        if (channels.has(channel)) { throw Error(`Bridge rx channel '${channel}' allready registered!`); }
+        if (channels.has(channel)) { throw Error(`Bifrost router rx channel '${channel}' allready registered!`); }
 
         channels.set(channel, receiver);
         sockets.forEach(socket=>{ hear(socket, channel, receiver); });

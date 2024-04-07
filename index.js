@@ -8,10 +8,15 @@ slib(
         mode:isServer?"node":"web",
         minify:false,
         lib:{
-            entries:["client/index.js", "server/index.js"]
+            entries:[
+                "client/router/index.js",
+                "server/router/index.js",
+                "client/index.js",
+                "server/index.js",
+            ]
         },
         demo:{
-            dir:isServer?"demo/server":"demo/client",
+            dir:isServer?"demo/backend":"demo/frontend",
             external:isServer?["chalk"]:[]
         }
     }
