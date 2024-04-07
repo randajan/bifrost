@@ -1,9 +1,9 @@
 
 const _privates = new WeakMap();
 
-export class SocketGroups {
+export class SocketsGroup {
 
-    constructor(bridge, grouper) {
+    constructor(router, grouper) {
 
         const byId = new Map();
         const bySocket = new Map();
@@ -29,11 +29,11 @@ export class SocketGroups {
             add(toId, socket);
         }
 
-        Object.defineProperty(this, "bridge", {
-            value:bridge, enumerable:true
+        Object.defineProperty(this, "router", {
+            value:router, enumerable:true
         });
 
-        bridge.io.on("connection", socket=>{
+        router.io.on("connection", socket=>{
             add(grouper(socket), socket);
             socket.on("disconnect", _=>{ remove(bySocket.get(socket), socket); });
         });
@@ -53,7 +53,7 @@ export class SocketGroups {
     }
 
     async tx(channel, transceiver, id) {
-        return this.bridge.tx(channel, transceiver, this.get(id));
+        return this.router.tx(channel, transceiver, this.get(id));
     }
 
 }

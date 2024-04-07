@@ -1,14 +1,16 @@
 
-import { info, log } from "@randajan/simple-lib/node";
+import { info } from "@randajan/simple-lib/node";
 
 import { createServer as createServerHTTP } from "http";
 import { Server as IO } from "socket.io";
 
 import { BifrostRouter } from "../../../dist/server";
 
+//Create simple server
 const http = createServerHTTP();
 http.listen(info.port+1);
 
+//Register Socket.io API
 const io = new IO(http, {
     cors: {
         origin: "*",
@@ -16,10 +18,21 @@ const io = new IO(http, {
       }
 });
 
-const bridge = new BifrostRouter(io);
+//Create router using Socket.io API
+const bifrost = new BifrostRouter(io);
 
-bridge.rx("test", (socket, { msg })=>{
-    console.log(msg);
+//Register receiver
+bifrost.rx("testChannel", (socket, { msg })=>{
+    console.log(`Server received: '${msg}'`);
 
-    return "msg accepted";
+    setTimeout(async _=>{
+        const msg = "TEST-BROADCAST";
+        console.log(`Server send ${msg}`);
+
+        //Send broadcast message
+        bifrost.tx("testChannel", { msg }).then(console.log);
+    }, 1000);
+
+    //Reply to received message
+    return `Server reply to: '${msg}'`;
 });

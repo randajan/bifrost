@@ -1,5 +1,5 @@
 import { deaf, emit, hear } from "../../../arc/tools";
-import { SocketGroups } from "./SocketsGroups";
+import { SocketsGroup } from "./SocketsGroup";
 
 const _privates = new WeakMap();
 
@@ -31,7 +31,7 @@ export class ServerRouter {
     createGroup(name, grouper) {
         const { groups } = _privates.get(this);
         if (groups.has(name)) { throw Error(`Bifrost router group '${name}' allready exist!`); }
-        const group = new SocketGroups(this, grouper);
+        const group = new SocketsGroup(this, grouper);
         groups.set(name, group);
         return group;
     }

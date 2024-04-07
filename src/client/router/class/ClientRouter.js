@@ -39,7 +39,7 @@ export class ClientRouter {
         const { socket, threads, channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(`Bifrost router channel '${channel}' allready exist!`); }
 
-        const rx = _=>threads.txLock(channel, receiver, socket, body);
+        const rx = (socket, body)=>threads.txLock(channel, receiver, socket, body);
         channels.set(channel, rx);
         hear(socket, channel, rx);
 
