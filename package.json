@@ -16,21 +16,25 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@randajan/simple-lib": "^2.3.1"
-  },
-  "dependencies": {
+    "@randajan/simple-lib": "^2.3.1",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5"
   },
+  "dependencies": {},
   "files": [
     "dist",
     "README.md",
     "LICENSE"
   ],
   "keywords": [
-    "types",
-    "tool"
-  ],
+    "bifrost",
+    "real-time communication",
+    "data synchronization",
+    "backend/frontend integration",
+    "WebSocket",
+    "socket",
+    "socket.io"
+],
   "homepage": "https://github.com/randajan/bifrost",
   "bugs": {
     "url": "https://github.com/randajan/bifrost/issues"
