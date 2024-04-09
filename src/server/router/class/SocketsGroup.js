@@ -33,9 +33,9 @@ export class SocketsGroup {
             value:router, enumerable:true
         });
 
-        router.io.on("connection", socket=>{
+        router.welcome(socket=>{
             add(grouper(socket), socket);
-            socket.on("disconnect", _=>{ remove(bySocket.get(socket), socket); });
+            return _=>{ remove(bySocket.get(socket), socket); };
         });
 
         _privates.set(this, { byId, bySocket, remove, add, set });

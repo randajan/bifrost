@@ -44,8 +44,10 @@ export class ClientRouter {
         hear(socket, channel, rx);
 
         return _=>{
+            if (!channels.has(channel)) { return false; }
             channels.delete(channel);
             deaf(socket, channel);
+            return true;
         }
     }
 

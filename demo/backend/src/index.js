@@ -21,6 +21,14 @@ const io = new IO(http, {
 //Create router using Socket.io API
 const bifrost = new BifrostRouter(io);
 
+//Welcome new client
+bifrost.welcome(socket=>{
+    console.log(`Welcome client ${socket.id}`);
+
+    //Optionaly set up cleanUp function that will be triggered when socket disconnected
+    return _=>{ console.log(`Farewell client ${socket.id}`); }
+});
+
 //Register receiver
 bifrost.rx("testChannel", (socket, { msg })=>{
     console.log(`Server received: '${msg}'`);
