@@ -20,29 +20,29 @@ export class ClientRouter {
         _privates.set(this, _p);
     }
 
-    async txLock(key, execute, ...args) {
-        return _privates.get(this).txLock(key, execute, ...args);
+    async txLock(lock, execute, ...args) {
+        return _privates.get(this).txLock(lock, execute, ...args);
     }
 
-    async rxLock(key, execute, ...args) {
-        return _privates.get(this).rxLock(key, execute, ...args);
+    async rxLock(lock, execute, ...args) {
+        return _privates.get(this).rxLock(lock, execute, ...args);
     }
 
     async tx(channel, transceiver, opt={}) {
-        const { key } = opt;
+        const { lock } = opt;
         const { socket, rxLock } = _privates.get(this);
         const rnbl = typeof transceiver === "function";
 
-        if (!rnbl) { return rxLock(key || channel, emit, socket, channel, transceiver); }
-        return rxLock(key || channel, _=>transceiver(body=>emit(socket, channel, body)));
+        if (!rnbl) { return rxLock(lock || channel, emit, socket, channel, transceiver); }
+        return rxLock(lock || channel, _=>transceiver(body=>emit(socket, channel, body)));
     }
 
     async rx(channel, receiver, opt={}) {
-        const { key } = opt;
+        const { lock } = opt;
         const { socket, txLock, channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(`Bifrost router channel '${channel}' allready exist!`); }
 
-        const rx = (socket, body)=>txLock(key || channel, receiver, socket, body);
+        const rx = (socket, body)=>txLock(lock || channel, receiver, socket, body);
         channels.set(channel, rx);
         hear(socket, channel, rx);
 
