@@ -1,5 +1,5 @@
 import { deaf, emit, hear } from "../../../arc/tools";
-import { Threads } from "../../../arc/Threads";
+import { createThreadsLock } from "../../../arc/threadsLock";
 
 const _privates = new WeakMap();
 
@@ -8,7 +8,8 @@ export class ClientRouter {
     constructor(socket) {
         const _p = {
             socket,
-            threads:new Threads(),
+            txLock:createThreadsLock(),
+            rxLock:createThreadsLock(),
             channels:new Map()
         }
 
@@ -19,27 +20,29 @@ export class ClientRouter {
         _privates.set(this, _p);
     }
 
-    async txLock(channel, execute, ...args) {
-        return _privates.get(this).threads.txLock(channel, execute, ...args);
+    async txLock(key, execute, ...args) {
+        return _privates.get(this).txLock(key, execute, ...args);
     }
 
-    async rxLock(channel, execute, ...args) {
-        return _privates.get(this).threads.rxLock(channel, execute, ...args);
+    async rxLock(key, execute, ...args) {
+        return _privates.get(this).rxLock(key, execute, ...args);
     }
 
-    async tx(channel, transceiver) {
-        const { socket, threads } = _privates.get(this);
+    async tx(channel, transceiver, opt={}) {
+        const { key } = opt;
+        const { socket, rxLock } = _privates.get(this);
         const rnbl = typeof transceiver === "function";
 
-        if (!rnbl) { return threads.rxLock(channel, emit, socket, channel, transceiver); }
-        return threads.rxLock(channel, _=>transceiver(body=>emit(socket, channel, body)));
+        if (!rnbl) { return rxLock(key || channel, emit, socket, channel, transceiver); }
+        return rxLock(key || channel, _=>transceiver(body=>emit(socket, channel, body)));
     }
 
-    async rx(channel, receiver) {
-        const { socket, threads, channels } = _privates.get(this);
+    async rx(channel, receiver, opt={}) {
+        const { key } = opt;
+        const { socket, txLock, channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(`Bifrost router channel '${channel}' allready exist!`); }
 
-        const rx = (socket, body)=>threads.txLock(channel, receiver, socket, body);
+        const rx = (socket, body)=>txLock(key || channel, receiver, socket, body);
         channels.set(channel, rx);
         hear(socket, channel, rx);
 
