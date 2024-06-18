@@ -18,7 +18,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@randajan/simple-lib": "^2.3.1",
+    "@randajan/simple-lib": "^2.3.2",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5"
   },

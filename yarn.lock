@@ -112,13 +112,13 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.16.17.tgz#c5a1a4bfe1b57f0c3e61b29883525c6da3e5c091"
   integrity sha512-y+EHuSchhL7FjHgvQL/0fnnFmO4T1bhvWANX6gcnqTjtnKWbTvUMCpGnv2+t+31d7RzyEAYAd4u2fnIhHL6N/Q==
 
-"@randajan/simple-lib@^2.3.1":
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/@randajan/simple-lib/-/simple-lib-2.3.1.tgz#216ba7b9f644ae0dca43881f6198e460651ede0e"
-  integrity sha512-qp9SEc19TClLrLXOnrs8GUWJjz74Lq264Y7S7bGRN4djQa7lmI+eCHPNjH0p/ddb1GRe0fHmbf7brl2mH/3dhA==
+"@randajan/simple-lib@^2.3.2":
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/@randajan/simple-lib/-/simple-lib-2.3.2.tgz#7d6598ddc7a0598655007237444603cf6cfa49d6"
+  integrity sha512-JQfTWvOP20PtUQwXoIsP5klSxfyV24w/oq5C0giEgx4ROr13mgAormIg21Z0Fhv5EoBd/mQ21Lpr6hEqB7HSoQ==
   dependencies:
     app-root-path "^3.1.0"
-    chalk "^5.2.0"
+    chalk "^5.3.0"
     chokidar "^3.6.0"
     esbuild "0.16.17"
     esbuild-node-externals "^1.13.0"
@@ -315,7 +315,7 @@ cache-base@^1.0.1:
     union-value "^1.0.0"
     unset-value "^1.0.0"
 
-chalk@^5.2.0:
+chalk@^5.3.0:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.3.0.tgz#67c20a7ebef70e7f3970a01f90fa210cb6860385"
   integrity sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==
