@@ -1,6 +1,6 @@
 {
   "name": "@randajan/bifrost",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Teleport your data from backend to frontend effortless",
   "repository": "randajan/bifrost",
   "type": "module",
