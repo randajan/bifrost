@@ -100,7 +100,7 @@ export class Beam {
     }
 
 
-    async watch(watcher) {
+    watch(watcher) {
         if (typeof watcher !== "function") { throw Error("Beam.watch(watcher) should be function"); }
         const { watchers } = _privates.get(this);
 
