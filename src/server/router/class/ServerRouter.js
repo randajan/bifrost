@@ -90,8 +90,6 @@ export class ServerRouter {
 
     createBeam(channel, stateAdapter) {
         return new Beam(stateAdapter, {
-            pull:async (getState, ...args)=>getState(...args),
-            push:(newState)=>newState,
             register:(beam, set)=>{
                 this.rx(channel, async (socket, { isSet, state })=>{
                     if (!isSet) { return beam.get(socket); }

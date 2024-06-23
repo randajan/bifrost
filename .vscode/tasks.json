@@ -8,7 +8,8 @@
             "type": "shell",
             "command": "npm publish --access=public",
             "dependsOn": [
-                "Rise Version"
+                "Create build",
+                "GIT push"
             ],
             "group": {
                 "kind": "build",
@@ -16,7 +17,20 @@
             }
         },
         {
-            "label": "Rise Version",
+            "label": "Create build",
+            "type": "shell",
+            "command": "node index isBuild=true",
+        },
+        {
+            "label": "GIT push",
+            "type": "shell",
+            "command": "git add .; git commit -m 'Rise version'; git push -u origin main",
+            "dependsOn": [
+                "Rise version"
+            ]
+        },
+        {
+            "label": "Rise version",
             "type": "shell",
             "command": "npm version ${input:npmVersion}",
             "dependsOn": [
@@ -26,15 +40,7 @@
         {
             "label": "GIT commit",
             "type": "shell",
-            "command": "git add .; git commit -m '${input:commit}'; git push origin main"
-        },
-        {
-            "type": "npm",
-            "script": "build",
-            "group": "build",
-            "problemMatcher": [],
-            "label": "npm: build",
-            "detail": "node ./build.js"
+            "command": "git add .; git commit -m '${input:commit}'",
         }
     ],
     "inputs": [
@@ -46,7 +52,7 @@
         },
         {
             "id": "npmVersion",
-            "description": "Npm Version:",
+            "description": "Package version:",
             "default": "patch",
             "type": "pickString",
             "options": [

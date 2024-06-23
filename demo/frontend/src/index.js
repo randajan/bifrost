@@ -35,7 +35,19 @@ bifrost.tx("color", async (tx)=>{
 
 //Test beam
 (async ()=>{
-    const beam = bifrost.createBeam("munin");
+    let state;
+
+    const beam = bifrost.createBeam("munin", {
+        get:_=>{
+            console.log("get");
+            return state
+        },
+        set:(newState)=>{
+            state = newState;
+            console.log("set", state);
+            return state;
+        }
+    });
 
     const input = document.getElementById("munin");
     

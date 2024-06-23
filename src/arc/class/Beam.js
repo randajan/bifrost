@@ -37,12 +37,22 @@ export class Beam {
             return newState;
         }
 
-        _p.update = async (direction, newState, ...args)=>{
+        _p.update = async (dir, newState, ...args)=>{
+            let state;
+
             try {
                 _p.isPending = true;
-                _p.status = direction;
-                _p.pending = direction !== "tx" ? pull(get, ...args) : push(newState, get, ...args);
-                _set(await _p.pending, ...args);
+                _p.status = dir;
+
+                if (dir === "rx") { _p.pending = pull ? pull(get, ...args) : get(...args); }
+                else { _p.pending = push ? push(newState, get, ...args) : newState; }
+
+                state = await _p.pending;
+
+                if (dir === "tx" || pull) {
+                    state = await _set(state, ...args);
+                }
+                
             } catch(err) {
                 _p.error = err;
                 _p.status = "error";
@@ -50,6 +60,8 @@ export class Beam {
             
             delete _p.pending;
             _p.isPending = false;
+
+            return state;
         },
 
         Object.defineProperties(this, {
@@ -65,27 +77,28 @@ export class Beam {
     async refresh(...args) {
         const _p = _privates.get(this);
 
-        if (this.isPending) { await _p.pending; }
-        else { await _p.update("rx", null, ...args);  }
+        if (this.isPending) { return _p.pending; }
+        return _p.update("rx", undefined, ...args);
 
-        return _p.status === "ready";
     }
 
     async get(...args) {
         const _p = _privates.get(this);
-        if (_p.status === "init") { await this.refresh(...args); }
-        else if (this.isPending) { await _p.pending; }
+
+        if (_p.status === "init" || this.isPending) {
+            return this.refresh(...args);
+        }
 
         return _p.get(...args);
     }
 
-    async set(newState, ...args) {
+    async set(state, ...args) {
         const _p = _privates.get(this);
-        await this.get(...args); //it will make it ready
+        if (_p.status === "init" || this.isPending) {
+            await this.refresh(...args);
+        }
 
-        await _p.update("tx", newState, ...args);
-
-        return _p.get(...args);
+        return _p.update("tx", state, ...args);
     }
 
 

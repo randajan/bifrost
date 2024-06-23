@@ -60,12 +60,13 @@ bifrost.rx("color", (socket)=>{
 (async ()=>{
     let states = {}
     const beam = bifrost.createGroup("byColor", socket=>socket.color).createBeam("munin", {
-        get:(socket, groupId)=>{
+        get:(groupId)=>{
+            console.log("get");
             return states[groupId];
         },
-        set:(state, socket, groupId)=>{
+        set:(state, groupId)=>{
             states[groupId] = state;
-            console.log(states);
+            console.log("set", states);
             return state;
         }
     });

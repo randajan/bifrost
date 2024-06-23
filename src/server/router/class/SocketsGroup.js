@@ -68,8 +68,6 @@ export class SocketsGroup {
         const _p = _privates.get(this);
 
         return new Beam(stateAdapter, {
-            pull:async (getState, ...args)=>getState(...args),
-            push:(newState)=>newState,
             register:(beam, set)=>{
                 this.router.rx(channel, async (socket, { isSet, state })=>{
                     const groupId = _p.getSocketGroupId(socket);
