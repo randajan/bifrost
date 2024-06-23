@@ -30,7 +30,6 @@ export class Beam {
 
         const afterSet = (state, ...args)=>{
             _p.status = "ready";
-            console.log(state);
             mapList(undefined, _p.watchers, state, ...args);
             return state;
         }
