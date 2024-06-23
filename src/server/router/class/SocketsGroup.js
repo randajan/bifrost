@@ -75,7 +75,7 @@ export class SocketsGroup {
                     return set(state, groupId, socket);
                 });
 
-                beam.watch((state, groupId, sourceSocket)=>this.tx(channel, groupId, state, sourceSocket));
+                beam.watch((state, groupId, sourceSocket)=>this.txBroad(channel, state, sourceSocket));
 
                 Object.defineProperties(beam, {
                     router:{ enumerable:true, value:this },
