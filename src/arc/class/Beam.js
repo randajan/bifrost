@@ -28,13 +28,14 @@ export class Beam {
             get
         }
 
-        const afterSet = state=>{
+        const afterSet = (state, ...args)=>{
             _p.status = "ready";
+            console.log(state);
             mapList(undefined, _p.watchers, state, ...args);
             return state;
         }
 
-        const _set = async (newState, ...args)=>afterSet(await set(newState, ...args));
+        const _set = async (newState, ...args)=>afterSet(await set(newState, ...args), ...args);
 
         _p.update = async (dir, newState, ...args)=>{
             let state;
@@ -49,7 +50,7 @@ export class Beam {
                 state = await _p.pending;
 
                 if (dir === "tx" || pull) { state = await _set(state, ...args); }
-                else { state = await afterSet(state); }
+                else { state = await afterSet(state, ...args); }
                 
             } catch(err) {
                 _p.error = err;
