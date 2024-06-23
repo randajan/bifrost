@@ -21,9 +21,14 @@ const io = new IO(http, {
 //Create router using Socket.io API
 const bifrost = new BifrostRouter(io);
 
+let toggle = false;
+
 //Welcome new client
 bifrost.welcome(socket=>{
-    console.log(`Welcome client ${socket.id}`);
+    socket.color = (["green", "blue"])[+toggle];
+    toggle = !toggle;
+
+    console.log(`Welcome client ${socket.id} you are ${socket.color}`);
 
     //Optionaly set up cleanUp function that will be triggered when socket disconnected
     return _=>{ console.log(`Farewell client ${socket.id}`); }
@@ -38,9 +43,31 @@ bifrost.rx("testChannel", (socket, { msg })=>{
         console.log(`Server send ${msg}`);
 
         //Send broadcast message
-        bifrost.tx("testChannel", { msg }).then(console.log);
+        bifrost.txBroad("testChannel", { msg }).then(console.log);
     }, 1000);
 
     //Reply to received message
     return `Server reply to: '${msg}'`;
 });
+
+//Test socket state
+bifrost.rx("color", (socket)=>{
+    return socket.color;
+});
+
+
+//Test beam by group
+(async ()=>{
+    let states = {}
+    const beam = bifrost.createGroup("byColor", socket=>socket.color).createBeam("munin", {
+        get:(socket, groupId)=>{
+            return states[groupId];
+        },
+        set:(state, socket, groupId)=>{
+            states[groupId] = state;
+            console.log(states);
+            return state;
+        }
+    });
+
+})();

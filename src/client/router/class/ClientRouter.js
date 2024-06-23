@@ -1,5 +1,5 @@
 import { deaf, emit, hear } from "../../../arc/tools";
-import { createThreadsLock } from "../../../arc/threadsLock";
+import { Beam } from "../../../arc/class/Beam";
 
 const _privates = new WeakMap();
 
@@ -8,7 +8,6 @@ export class ClientRouter {
     constructor(socket) {
         const _p = {
             socket,
-            threadsLock:createThreadsLock(),
             channels:new Map()
         }
 
@@ -23,23 +22,20 @@ export class ClientRouter {
         return _privates.get(this).txLock(key, execute, ...args);
     }
 
-    async tx(channel, transceiver, opt={}) {
-        const { lock } = opt;
-        const { socket, threadsLock } = _privates.get(this);
+    async tx(channel, transceiver) {
+        const { socket } = _privates.get(this);
         const rnbl = typeof transceiver === "function";
 
-        if (!rnbl) { return threadsLock(lock || channel, emit, socket, channel, transceiver); }
-        return threadsLock(lock || channel, _=>transceiver(body=>emit(socket, channel, body)));
+        if (!rnbl) { return emit(socket, channel, transceiver); }
+        return transceiver(body=>emit(socket, channel, body));
     }
 
-    async rx(channel, receiver, opt={}) {
-        const { lock } = opt;
-        const { socket, channels, threadsLock } = _privates.get(this);
+    async rx(channel, receiver) {
+        const { socket, channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(`Bifrost router channel '${channel}' allready exist!`); }
 
-        const rx = (socket, body)=>threadsLock(lock || channel, receiver, socket, body);
-        channels.set(channel, rx);
-        hear(socket, channel, rx);
+        channels.set(channel, receiver);
+        hear(socket, channel, receiver);
 
         return _=>{
             if (!channels.has(channel)) { return false; }
@@ -47,6 +43,25 @@ export class ClientRouter {
             deaf(socket, channel);
             return true;
         }
+    }
+
+    createBeam(channel, stateAdapter) {
+        return new Beam(stateAdapter, {
+            pull:async (getState)=>{
+                return this.tx(channel, {isSet:false});
+            },
+            push:(newState, getState)=>{
+                return this.tx(channel, {isSet:true, state:newState});
+            },
+            register:(beam, set)=>{
+                this.rx(channel, (socket, state)=>set(state));
+
+                Object.defineProperties(beam, {
+                    router:{ enumerable:true, value:this },
+                    channel:{ enumerable:true, value:channel}
+                });
+            }
+        });
     }
 
 }

@@ -4,8 +4,10 @@ import { info } from "@randajan/simple-lib/web";
 import socketIOClient from "socket.io-client";
 import { BifrostRouter } from "../../../dist/client";
 
+import "./index.css";
+
 //Connect to Socket.io server
-const socket = socketIOClient(`http://127.0.0.1:${info.port+1}`);
+const socket = socketIOClient(`localhost:${info.port+1}`);
 
 //Create router using Socket.io socket
 const bifrost = new BifrostRouter(socket);
@@ -23,3 +25,27 @@ bifrost.rx("testChannel", (socket, { msg })=>{
     //Reply to received message
     return `Client reply to: '${msg}'`;
 });
+
+//Test socket state
+bifrost.tx("color", async (tx)=>{
+    const color = await tx();
+    document.getElementsByTagName("body")[0].style["background-color"] = color;
+});
+
+
+//Test beam
+(async ()=>{
+    const beam = bifrost.createBeam("munin");
+
+    const input = document.getElementById("munin");
+    
+    input.addEventListener("input", _=>{
+        beam.set(input.value);
+    });
+
+    beam.watch(data=>input.value = data);
+
+    beam.refresh();
+
+    window.bifrostBeam = beam;
+})();

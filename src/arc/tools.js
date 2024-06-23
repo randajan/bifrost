@@ -27,13 +27,25 @@ export const unregisterExe = (list, exe)=>{
 }
 
 export const registerExe = (list, exe)=>{
-    list.push(exe);
+    list.unshift(exe);
     return _=>unregisterExe(list, exe);
 }
 
 export const mapList = async (map, list, ...args)=>{
     for (let i=list.length-1; i>=0; i--) {
-        const res = await list[i](...args);
-        if (map && typeof res === "function") { map.push(res); }
+        try { 
+            const res = await list[i](...args);
+            if (map && typeof res === "function") { map.push(res); }
+        }
+        catch(err) { console.warn(err); }
     }
+}
+
+export const mapSockets = (sockets, execute, except)=>{
+    const result = [];
+    for (const socket of sockets) {
+        if (socket === except) { continue; }
+        result.push(execute(socket));
+    }
+    return result;
 }

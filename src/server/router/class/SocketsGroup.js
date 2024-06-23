@@ -1,9 +1,10 @@
+import { Beam } from "../../../arc/class/Beam";
 
 const _privates = new WeakMap();
 
 export class SocketsGroup {
 
-    constructor(router, grouper) {
+    constructor(router, getSocketGroupId) {
 
         const byId = new Map();
         const bySocket = new Map();
@@ -23,37 +24,67 @@ export class SocketsGroup {
         }
 
         const set = (fromId, socket)=>{
-            const toId = grouper(socket);
+            const toId = getSocketGroupId(socket);
             if (fromId === toId) { return; }
             remove(fromId, socket);
             add(toId, socket);
         }
+
+        const get = id=>byId.has(id) ? byId.get(id) : [];
+        const reset = _=>bySocket.forEach(set);
 
         Object.defineProperty(this, "router", {
             value:router, enumerable:true
         });
 
         router.welcome(socket=>{
-            add(grouper(socket), socket);
+            add(getSocketGroupId(socket), socket);
             return _=>{ remove(bySocket.get(socket), socket); };
         });
 
-        _privates.set(this, { byId, bySocket, remove, add, set });
+        _privates.set(this, { getSocketGroupId, add, set, get, reset });
 
     }
 
     reset() {
-        const { bySocket, set } = _privates.get(this);
-        bySocket.forEach(set);
+        _privates.get(this).reset();
     }
 
-    get(id) {
-        const { byId } = _privates.get(this);
-        return byId.has(id) ? [...byId.get(id)] : [];
+    get(groupId) {
+        return [..._privates.get(this).get(groupId)];
     }
 
-    async tx(channel, transceiver, id) {
-        return this.router.tx(channel, transceiver, this.get(id));
+    async tx(channel, groupId, transceiver, exceptSocket) {
+        const sockets = _privates.get(this).get(groupId);
+        return this.router.tx(channel, sockets, transceiver, exceptSocket);
+    }
+
+    async txBroad(channel, transceiver, socket, excludeSocket=true) {
+        const socketId = _privates.get(this).getSocketGroupId(socket);
+        return this.tx(channel, socketId, transceiver, excludeSocket ? socket : undefined);
+    }
+
+    createBeam(channel, stateAdapter) {
+        const _p = _privates.get(this);
+
+        return new Beam(stateAdapter, {
+            pull:async (getState, ...args)=>getState(...args),
+            push:(newState)=>newState,
+            register:(beam, set)=>{
+                this.router.rx(channel, async (socket, { isSet, state })=>{
+                    const groupId = _p.getSocketGroupId(socket);
+                    if (!isSet) { return beam.get(groupId, socket); }
+                    return set(state, groupId, socket);
+                });
+
+                beam.watch((state, groupId, sourceSocket)=>this.tx(channel, groupId, state, sourceSocket));
+
+                Object.defineProperties(beam, {
+                    router:{ enumerable:true, value:this },
+                    channel:{ enumerable:true, value:channel}
+                });
+            }
+        });
     }
 
 }

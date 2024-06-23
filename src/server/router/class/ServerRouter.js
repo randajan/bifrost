@@ -1,4 +1,5 @@
-import { deaf, emit, hear, registerExe, mapList } from "../../../arc/tools";
+import { Beam } from "../../../arc/class/Beam";
+import { deaf, emit, hear, registerExe, mapList, mapSockets } from "../../../arc/tools";
 import { SocketsGroup } from "./SocketsGroup";
 
 const _privates = new WeakMap();
@@ -17,7 +18,8 @@ export class ServerRouter {
 
         Object.defineProperties(this, {
             io:{ enumerable, value:io },
-            sockets:{ enumerable, get:_=>[..._p.sockets] }
+            sockets:{ enumerable, get:_=>[..._p.sockets] },
+            socketsCount:{ enumerable, get:_=>_p.sockets.size }
         });
 
         io.on("connection", async socket=>{
@@ -60,12 +62,15 @@ export class ServerRouter {
         return registerExe(_privates.get(this).farewells, execute);
     }
 
-    tx(channel, transceiver, sockets) {
+    tx(channel, sockets, transceiver, excludeSocket) {
         const rnbl = typeof transceiver === "function";
-        if (!sockets) { sockets = this.sockets; }
-        return Promise.all(sockets.map(async socket=>{
-            return rnbl ? transceiver(body=>emit(socket, channel, body), socket) : emit(socket, channel, transceiver);
-        }));
+        const exe = rnbl ? socket=>transceiver(body=>emit(socket, channel, body), socket) : socket=>emit(socket, channel, transceiver);
+
+        return Promise.all(mapSockets(sockets, exe, excludeSocket));
+    }
+
+    txBroad(channel, transceiver, excludeSocket) {
+        return this.tx(channel, _privates.get(this).sockets, transceiver, excludeSocket);
     }
 
     rx(channel, receiver) {
@@ -81,6 +86,28 @@ export class ServerRouter {
             sockets.forEach(socket=>{ deaf(socket, channel); });
             return true;
         }
+    }
+
+    createBeam(channel, stateAdapter) {
+        return new Beam(stateAdapter, {
+            pull:async (getState, ...args)=>getState(...args),
+            push:(newState)=>newState,
+            register:(beam, set)=>{
+                this.rx(channel, async (socket, { isSet, state })=>{
+                    if (!isSet) { return beam.get(socket); }
+                    
+                    return set(state, socket);
+                });
+
+                beam.watch((state, sourceSocket)=>this.txBroad(channel, state, sourceSocket));
+
+                Object.defineProperties(beam, {
+                    router:{ enumerable:true, value:this },
+                    channel:{ enumerable:true, value:channel}
+                });
+            }
+        });
+
     }
 
 }
