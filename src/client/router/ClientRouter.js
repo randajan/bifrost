@@ -1,5 +1,5 @@
-import { deaf, emit, hear } from "../../../arc/tools";
-import { Beam, defaultStateAdapter } from "../../../arc/class/Beam";
+import { deaf, emit, hear } from "../../arc/tools";
+import { Beam, defaultStateAdapter } from "../../arc/class/Beam";
 
 const _privates = new WeakMap();
 

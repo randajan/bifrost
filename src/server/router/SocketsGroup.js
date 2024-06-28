@@ -1,4 +1,4 @@
-import { Beam, defaultStatesAdapter } from "../../../arc/class/Beam";
+import { Beam, defaultStatesAdapter } from "../../arc/class/Beam";
 
 const _privates = new WeakMap();
 

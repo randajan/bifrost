@@ -1,5 +1,5 @@
-import { Beam, defaultStateAdapter } from "../../../arc/class/Beam";
-import { deaf, emit, hear, registerExe, mapList, mapSockets } from "../../../arc/tools";
+import { Beam, defaultStateAdapter } from "../../arc/class/Beam";
+import { deaf, emit, hear, registerExe, mapList, mapSockets } from "../../arc/tools";
 import { SocketsGroup } from "./SocketsGroup";
 
 const _privates = new WeakMap();

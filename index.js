@@ -10,10 +10,9 @@ slib(
         minify:false,
         lib:{
             entries:[
-                "client/router/index.js",
-                "server/router/index.js",
-                "client/index.js",
                 "server/index.js",
+                "client/index.js",
+                "client/react/index.js"
             ]
         },
         demo:{

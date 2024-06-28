@@ -7,10 +7,9 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "exports": {
-    "./client": "./dist/client/index.js",
     "./server": "./dist/server/index.js",
-    "./client/router": "./dist/client/router/index.js",
-    "./server/router": "./dist/server/router/index.js"
+    "./client": "./dist/client/index.js",
+    "./client/react": "./dist/client/react/index.js"
   },
   "scripts": {
     "start": "set NODE_ENV=dev&& node ./index.js",
@@ -45,5 +44,8 @@
     "name": "Jan Randa",
     "email": "jnranda@gmail.com",
     "url": "https://www.linkedin.com/in/randajan/"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
   }
 }
