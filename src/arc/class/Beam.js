@@ -3,18 +3,31 @@ import { mapList, registerExe } from "../tools";
 
 const _privates = new WeakMap();
 
+export const defaultStateAdapter = (stateAdapter)=>{
+    if (stateAdapter) { return stateAdapter; }
+    let state = undefined;
+    return stateAdapter = {
+        get:_=>state,
+        set:newState=>state=newState
+    }
+}
+
+export const defaultStatesAdapter = (stateAdapter)=>{
+    if (stateAdapter) { return stateAdapter; }
+    const states = new Map();
+    return stateAdapter = {
+        get:(groupId)=>states.get(groupId),
+        set:(state, groupId)=>{
+            if (state == null) { states.delete(groupId); }
+            else { states.set(groupId, state); }
+            return state;
+        }
+    }
+}
 
 export class Beam {
 
-    constructor(stateAdapter, routerAdapter) {
-
-        if (!stateAdapter) {
-            let state = {};
-            stateAdapter = {
-                get:_=>state,
-                set:newState=>state=newState
-            }
-        }
+    constructor(routerAdapter, stateAdapter) {
 
         const { pull, push, register} = routerAdapter;
         const { get, set } = stateAdapter;

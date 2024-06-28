@@ -1,4 +1,4 @@
-import { Beam } from "../../../arc/class/Beam";
+import { Beam, defaultStatesAdapter } from "../../../arc/class/Beam";
 
 const _privates = new WeakMap();
 
@@ -67,7 +67,7 @@ export class SocketsGroup {
     createBeam(channel, stateAdapter) {
         const _p = _privates.get(this);
 
-        return new Beam(stateAdapter, {
+        return new Beam({
             register:(beam, set)=>{
                 this.router.rx(channel, async (socket, { isSet, state })=>{
                     const groupId = _p.getSocketGroupId(socket);
@@ -82,7 +82,7 @@ export class SocketsGroup {
                     channel:{ enumerable:true, value:channel}
                 });
             }
-        });
+        }, defaultStatesAdapter(stateAdapter));
     }
 
 }

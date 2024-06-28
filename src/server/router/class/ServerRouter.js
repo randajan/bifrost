@@ -1,4 +1,4 @@
-import { Beam } from "../../../arc/class/Beam";
+import { Beam, defaultStateAdapter } from "../../../arc/class/Beam";
 import { deaf, emit, hear, registerExe, mapList, mapSockets } from "../../../arc/tools";
 import { SocketsGroup } from "./SocketsGroup";
 
@@ -89,7 +89,7 @@ export class ServerRouter {
     }
 
     createBeam(channel, stateAdapter) {
-        return new Beam(stateAdapter, {
+        return new Beam({
             register:(beam, set)=>{
                 this.rx(channel, async (socket, { isSet, state })=>{
                     if (!isSet) { return beam.get(socket); }
@@ -104,7 +104,7 @@ export class ServerRouter {
                     channel:{ enumerable:true, value:channel}
                 });
             }
-        });
+        }, defaultStateAdapter(stateAdapter));
 
     }
 

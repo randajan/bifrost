@@ -1,5 +1,5 @@
 import { deaf, emit, hear } from "../../../arc/tools";
-import { Beam } from "../../../arc/class/Beam";
+import { Beam, defaultStateAdapter } from "../../../arc/class/Beam";
 
 const _privates = new WeakMap();
 
@@ -46,7 +46,7 @@ export class ClientRouter {
     }
 
     createBeam(channel, stateAdapter) {
-        return new Beam(stateAdapter, {
+        return new Beam({
             pull:async (getState)=>{
                 return this.tx(channel, {isSet:false});
             },
@@ -61,7 +61,7 @@ export class ClientRouter {
                     channel:{ enumerable:true, value:channel}
                 });
             }
-        });
+        }, defaultStateAdapter(stateAdapter));
     }
 
 }
