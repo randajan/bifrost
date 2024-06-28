@@ -57,7 +57,7 @@ export class ClientRouter {
                 this.rx(channel, (socket, state)=>set(state));
 
                 Object.defineProperties(beam, {
-                    router:{ enumerable:true, value:this },
+                    router:{ value:this },
                     channel:{ enumerable:true, value:channel}
                 });
             }
