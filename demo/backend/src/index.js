@@ -58,6 +58,11 @@ bifrost.rx("color", (socket)=>{
 
 //Test beam by group
 (async ()=>{
-    bifrost.createGroup("byColor", socket=>socket.color).createBeam("munin");
+    const beam = bifrost.createGroup("byColor", socket=>socket.color).createBeam("munin", {
+        trait:(state, color)=>{
+            console.log(state, color);
+            return state;
+        }
+    });
 
 })();

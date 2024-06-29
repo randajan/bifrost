@@ -1,4 +1,4 @@
-import { Beam, defaultStatesAdapter } from "../../arc/class/Beam";
+import { Beam } from "../../arc/class/Beam";
 
 const _privates = new WeakMap();
 
@@ -64,10 +64,11 @@ export class SocketsGroup {
         return this.tx(channel, socketId, transceiver, excludeSocket ? socket : undefined);
     }
 
-    createBeam(channel, stateAdapter) {
+    createBeam(channel, opt={}) {
         const _p = _privates.get(this);
 
-        return new Beam({
+        return new Beam(this, channel, {
+            isMultiState:true,
             register:(beam, set)=>{
                 this.router.rx(channel, async (socket, { isSet, state })=>{
                     const groupId = _p.getSocketGroupId(socket);
@@ -76,13 +77,8 @@ export class SocketsGroup {
                 });
 
                 beam.watch((state, groupId, sourceSocket)=>this.txBroad(channel, state, sourceSocket));
-
-                Object.defineProperties(beam, {
-                    router:{ value:this },
-                    channel:{ enumerable:true, value:channel}
-                });
             }
-        }, defaultStatesAdapter(stateAdapter));
+        }, opt);
     }
 
 }

@@ -1,5 +1,5 @@
-import { deaf, emit, hear } from "../../arc/tools";
-import { Beam, defaultStateAdapter } from "../../arc/class/Beam";
+import { deaf, emit, hear, msg } from "../../arc/tools";
+import { Beam } from "../../arc/class/Beam";
 
 const _privates = new WeakMap();
 
@@ -32,7 +32,7 @@ export class ClientRouter {
 
     async rx(channel, receiver) {
         const { socket, channels } = _privates.get(this);
-        if (channels.has(channel)) { throw Error(`Bifrost router channel '${channel}' allready exist!`); }
+        if (channels.has(channel)) { throw Error(msg("Router", `allready exist!`, {channel})); }
 
         channels.set(channel, receiver);
         hear(socket, channel, receiver);
@@ -45,8 +45,8 @@ export class ClientRouter {
         }
     }
 
-    createBeam(channel, stateAdapter) {
-        return new Beam({
+    createBeam(channel, opt={}) {
+        return new Beam(this, channel, {
             pull:async (getState)=>{
                 return this.tx(channel, {isSet:false});
             },
@@ -55,13 +55,8 @@ export class ClientRouter {
             },
             register:(beam, set)=>{
                 this.rx(channel, (socket, state)=>set(state));
-
-                Object.defineProperties(beam, {
-                    router:{ value:this },
-                    channel:{ enumerable:true, value:channel}
-                });
             }
-        }, defaultStateAdapter(stateAdapter));
+        }, opt);
     }
 
 }

@@ -1,3 +1,10 @@
+
+export const msg = (method, text, descObj={})=>{
+    let desc = "";
+    for (let i in descObj) { desc += (desc ? ", " : "") + ` ${i} '${descObj[i]}'`; }
+    return `Bifrost${method}${desc} ${text}`;
+};
+
 export const emit = async (socket, channel, body)=>{
     return new Promise((res, rej)=>{
         socket.emit(channel, body, (ok, body)=>{
@@ -10,7 +17,7 @@ export const hear = (socket, channel, receiver)=>{
     socket.on(channel, async (body, ack)=>{
         try { await ack(true, await receiver(socket, body)); }
         catch (err) {
-            console.warn(err);
+            console.error(err);
             await ack(false, `Remote error: ${err}`);
         }
     });

@@ -46,6 +46,10 @@ bifrost.tx("color", async (tx)=>{
             state = newState;
             console.log("set", state);
             return state;
+        },
+        queue:{
+            softMs:1000,
+            maxSize:10
         }
     });
 

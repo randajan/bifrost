@@ -1,70 +1,97 @@
-import { mapList, registerExe } from "../tools";
+import { createQueue } from "@randajan/queue";
+import { mapList, msg, registerExe } from "../tools";
 
-
+const enumerable = true;
 const _privates = new WeakMap();
 
-export const defaultStateAdapter = (stateAdapter)=>{
-    if (stateAdapter) { return stateAdapter; }
-    let state = undefined;
-    return stateAdapter = {
-        get:_=>state,
-        set:newState=>state=newState
+const defaultStateAdapter = (opt)=>{
+    let state;
+    opt.get = _=>state;
+    opt.set = newState=>state=newState;
+}
+
+const defaultStatesAdapter = (opt)=>{
+    const states = new Map();
+    opt.get = (groupId)=>states.get(groupId);
+    opt.set = (state, groupId)=>{
+        if (state == null) { states.delete(groupId); }
+        else { states.set(groupId, state); }
+        return state;
     }
 }
 
-export const defaultStatesAdapter = (stateAdapter)=>{
-    if (stateAdapter) { return stateAdapter; }
-    const states = new Map();
-    return stateAdapter = {
-        get:(groupId)=>states.get(groupId),
-        set:(state, groupId)=>{
-            if (state == null) { states.delete(groupId); }
-            else { states.set(groupId, state); }
-            return state;
-        }
+const formatOpt = (channel, opt, isMultiState)=>{
+    if (!opt) { opt = {}; }
+    if (!opt.set) { opt.set = opt.get; }
+    if (!opt.get) {
+        if (opt.set) { throw Error(msg(".Beam(opt)", "contain set property without get", {channel})); }
+        if (!isMultiState) { defaultStateAdapter(opt); }
+        else { defaultStatesAdapter(opt); }
     }
+    if (opt.trait) {
+        const set = opt.set;
+        opt.set = async (newState, ...args)=>set(await opt.trait(newState, ...args), ...args);
+    }
+    if (opt.queue) { opt.queue.pass = "last"; }
+    
+    return opt;
 }
 
 export class Beam {
 
-    constructor(routerAdapter, stateAdapter) {
-
-        const { pull, push, register} = routerAdapter;
-        const { get, set } = stateAdapter;
+    constructor(router, channel, routerAdapter, opt={}) {
+        const { pull, push, register, isMultiState } = routerAdapter;
+        const {
+            get,
+            set:setRaw,
+            allowChanges,
+            queue
+        } = formatOpt(channel, opt, isMultiState);
 
         const _p = {
+            channel,
             isPending:false,
-            status:"init", // ["init", "error", "tx", "rx", "ready"]
+            status:"init", // ["init", "error", "push", "pull", "ready"]
             watchers:[],
             error:null,
             pending:null,
             get
         }
 
-        const afterSet = (state, ...args)=>{
+        const afterSet = (state, args)=>{
             _p.status = "ready";
             mapList(undefined, _p.watchers, state, ...args);
             return state;
         }
 
-        const _set = async (newState, ...args)=>afterSet(await set(newState, ...args), ...args);
+        const set = async (newState, args)=>afterSet(await setRaw(newState, ...args), args);
 
-        _p.update = async (dir, newState, ...args)=>{
+        const setLocal = async (newState, args)=>{
+            if (!allowChanges || allowChanges == "local") { return set(newState, args); }
+            throw Error(msg(".Beam", "doesn't allow local changes", {channel}));
+        }
+        const setRemote = async (newState, ...args)=>{
+            if (!allowChanges || allowChanges == "remote") { return set(newState, args); }
+            throw Error(msg(".Beam", "doesn't allow remote changes", {channel}));
+        };
+
+        const update = async (status, newState, args)=>{
             let state;
 
             try {
                 _p.isPending = true;
-                _p.status = dir;
+                _p.status = status;
 
-                if (dir === "rx") { _p.pending = pull ? pull(get, ...args) : get(...args); }
+                if (status === "pull") { _p.pending = pull ? pull(get, ...args) : get(...args); }
                 else { _p.pending = push ? push(newState, get, ...args) : newState; }
 
                 state = await _p.pending;
 
-                if (dir === "tx" || pull) { state = await _set(state, ...args); }
-                else { state = await afterSet(state, ...args); }
+                if (status === "push" || pull) { state = await setLocal(state, args); }
+                else { state = await afterSet(state, args); }
                 
             } catch(err) {
+                console.error(err);
                 _p.error = err;
                 _p.status = "error";
             }
@@ -73,50 +100,53 @@ export class Beam {
             _p.isPending = false;
 
             return state;
-        },
+        };
+
+        _p.pull = args=>update("pull", undefined, args);
+        const _push = (state, args)=>update("push", state, args);
+        _p.push = !queue ? _push : createQueue(_push, queue);
+
 
         Object.defineProperties(this, {
-            isPending:{ enunmerable:true, get:_=>_p.isPending },
-            status:{ enumerable:true, get:_=>_p.status },
+            router:{ value:router},
+            channel:{ enumerable, channel },
+            isPending:{ enumerable, get:_=>_p.isPending },
+            status:{ enumerable, get:_=>_p.status }
         });
 
         _privates.set(this, _p);
 
-        register(this, _set);
+        register(this, setRemote);
     }
 
     async refresh(...args) {
-        const _p = _privates.get(this);
+        const { isPending, pull } = _privates.get(this);
 
-        if (this.isPending) { return _p.pending; }
-        return _p.update("rx", undefined, ...args);
+        if (isPending) { return _p.pending; }
+        return pull(args);
 
     }
 
     async get(...args) {
-        const _p = _privates.get(this);
+        const { isPending, status, get } = _privates.get(this);
 
-        if (_p.status === "init" || this.isPending) {
-            return this.refresh(...args);
-        }
+        if (status === "init" || isPending) { return this.refresh(...args); }
 
-        return _p.get(...args);
+        return get(...args);
     }
 
     async set(state, ...args) {
-        const _p = _privates.get(this);
-        if (_p.status === "init" || this.isPending) {
-            await this.refresh(...args);
-        }
+        const { isPending, status, push } = _privates.get(this);
+        if (status === "init" || isPending) { await this.refresh(...args); }
 
-        return _p.update("tx", state, ...args);
+        return push(state, args);
     }
 
-
     watch(watcher) {
-        if (typeof watcher !== "function") { throw Error("Beam.watch(watcher) should be function"); }
-        const { watchers } = _privates.get(this);
+        const { channel, watchers } = _privates.get(this);
 
+        if (typeof watcher !== "function") { throw Error(msg(".Beam.watch(...)", "expect function", {channel})); }
+        
         return registerExe(watchers, watcher);
     }
 }
