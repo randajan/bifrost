@@ -120,9 +120,9 @@ export class Beam {
     }
 
     async refresh(...args) {
-        const { isPending, pull } = _privates.get(this);
+        const { isPending, pending, pull } = _privates.get(this);
 
-        if (isPending) { return _p.pending; }
+        if (isPending) { return pending; }
         return pull(args);
 
     }
