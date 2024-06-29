@@ -109,7 +109,7 @@ export class Beam {
 
         Object.defineProperties(this, {
             router:{ value:router},
-            channel:{ enumerable, channel },
+            channel:{ enumerable, value:channel },
             isPending:{ enumerable, get:_=>_p.isPending },
             status:{ enumerable, get:_=>_p.status }
         });
