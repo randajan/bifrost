@@ -112,10 +112,10 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.16.17.tgz#c5a1a4bfe1b57f0c3e61b29883525c6da3e5c091"
   integrity sha512-y+EHuSchhL7FjHgvQL/0fnnFmO4T1bhvWANX6gcnqTjtnKWbTvUMCpGnv2+t+31d7RzyEAYAd4u2fnIhHL6N/Q==
 
-"@randajan/queue@^0.1.4":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@randajan/queue/-/queue-0.1.4.tgz#51115c86c7d731a83e47ae55b978d9153152fa76"
-  integrity sha512-soKfMCAm7JJ7jHsnHyArYmvx2mY3d4y7Tg6Xvts/yypoaSuLK76wXFkQcKIZ5D7S3L3y3QZ2+X/cLeimeTK1wA==
+"@randajan/queue@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@randajan/queue/-/queue-0.1.5.tgz#99d36e3d59ad83212e63bceb1d117c453a8f175b"
+  integrity sha512-u4vj7LAXaK+RHRl68MSijuBSo6wqfrbfYk94PvNAgW7ix2eR+oqcYGevqd16UVPCqzDQ2GPNr/D4raCJITuwwQ==
 
 "@randajan/simple-lib@^2.3.2":
   version "2.3.2"

@@ -32,7 +32,10 @@ const formatOpt = (channel, opt, isMultiState)=>{
         const set = opt.set;
         opt.set = async (newState, ...args)=>set(await opt.trait(newState, ...args), ...args);
     }
-    if (opt.queue) { opt.queue.pass = "last"; }
+    if (opt.queue) {
+        opt.queue.pass = "last";
+        opt.queue.returnResult = true;
+    }
     
     return opt;
 }
