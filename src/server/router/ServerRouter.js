@@ -62,14 +62,14 @@ export class ServerRouter {
         return registerExe(_privates.get(this).farewells, execute);
     }
 
-    tx(channel, sockets, transceiver, excludeSocket) {
+    async tx(channel, sockets, transceiver, excludeSocket) {
         const rnbl = typeof transceiver === "function";
         const exe = rnbl ? socket=>transceiver(body=>emit(socket, channel, body), socket) : socket=>emit(socket, channel, transceiver);
 
         return Promise.all(mapSockets(sockets, exe, excludeSocket));
     }
 
-    txBroad(channel, transceiver, excludeSocket) {
+    async txBroad(channel, transceiver, excludeSocket) {
         return this.tx(channel, _privates.get(this).sockets, transceiver, excludeSocket);
     }
 

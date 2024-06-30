@@ -64,6 +64,11 @@ export class SocketsGroup {
         return this.tx(channel, socketId, transceiver, excludeSocket ? socket : undefined);
     }
 
+    rx(channel, receiver) {
+        const _p = _privates.get(this);
+        return this.router.rx(channel, (socket, data)=>receiver(socket, _p.getSocketGroupId(socket), data));
+    }
+
     createBeam(channel, opt={}) {
         const _p = _privates.get(this);
 

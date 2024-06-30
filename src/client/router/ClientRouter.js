@@ -30,7 +30,7 @@ export class ClientRouter {
         return transceiver(body=>emit(socket, channel, body));
     }
 
-    async rx(channel, receiver) {
+    rx(channel, receiver) {
         const { socket, channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(msg("Router", `allready exist!`, {channel})); }
 
