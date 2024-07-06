@@ -47,11 +47,11 @@ export class ClientRouter {
 
     createBeam(channel, opt={}) {
         return new Beam(this, channel, {
-            pull:async (getState)=>{
+            pull:async _=>{
                 return this.tx(channel, {isSet:false});
             },
-            push:(newState, getState)=>{
-                return this.tx(channel, {isSet:true, state:newState});
+            push:(state)=>{
+                return this.tx(channel, {isSet:true, state});
             },
             register:(beam, set)=>{
                 this.rx(channel, (socket, state)=>set(state));

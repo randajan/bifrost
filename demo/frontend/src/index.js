@@ -35,18 +35,8 @@ bifrost.tx("color", async (tx)=>{
 
 //Test beam
 (async ()=>{
-    let state;
-
     const beam = bifrost.createBeam("munin", {
-        get:_=>{
-            console.log("get");
-            return state
-        },
-        set:(newState)=>{
-            state = newState;
-            console.log("set", state);
-            return state;
-        },
+        remoteStateProp:"state",
         queue:{
             softMs:1000,
             maxSize:10
@@ -55,8 +45,8 @@ bifrost.tx("color", async (tx)=>{
 
     const input = document.getElementById("munin");
     
-    input.addEventListener("input", _=>{
-        beam.set(input.value);
+    input.addEventListener("input", async _=>{
+        console.log(await beam.set(input.value));
     });
 
     beam.watch(data=>input.value = data);

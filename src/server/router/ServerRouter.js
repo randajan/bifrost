@@ -92,8 +92,7 @@ export class ServerRouter {
         return new Beam(this, channel, {
             register:(beam, set)=>{
                 this.rx(channel, async (socket, { isSet, state })=>{
-                    if (!isSet) { return beam.get(socket); }
-                    return set(state, socket);
+                    return isSet ? set(state, socket) : beam.get(socket);
                 });
 
                 beam.watch((state, sourceSocket)=>this.txBroad(channel, state, sourceSocket));
