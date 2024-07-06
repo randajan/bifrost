@@ -74,6 +74,8 @@ export class Beam {
             watchers:[],
             error:null,
             pending:null,
+            remoteStateProp,
+            localStateProp,
             get
         }
 
@@ -158,5 +160,15 @@ export class Beam {
         if (typeof watcher !== "function") { throw Error(msg(".Beam.watch(...)", "expect function", {channel})); }
         
         return registerExe(watchers, watcher);
+    }
+
+    extractRemoteState(reply) {
+        const { remoteStateProp } = _privates.get(this);
+        return stateExtract(remoteStateProp, reply);
+    }
+
+    extractLocalState(reply) {
+        const { localStateProp } = _privates.get(this);
+        return stateExtract(localStateProp, reply);
     }
 }

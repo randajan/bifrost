@@ -17,7 +17,10 @@ slib(
         },
         demo:{
             dir:isServer?"demo/backend":"demo/frontend",
-            external:isServer?["chalk"]:[]
+            external:isServer?["chalk"]:[],
+            loader:{
+                ".js":"jsx"
+            }
         }
     }
 )
