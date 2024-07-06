@@ -7,8 +7,12 @@ const _privates = new WeakMap();
 const wrapWithQueue = (exe, queue)=>!queue ? exe : createQueue(exe, queue);
 const wrapWithTrait = (exe, trait)=>!trait ? exe : async (s, ...a)=>exe(await trait(s, ...a), ...a);
 
-const stateExtract = (stateProperty, reply)=>(reply != null && stateProperty != null) ? reply[stateProperty] : reply;
+const stateExtract = (stateProperty, reply)=>{
+    if (stateProperty == null) { return reply; }
+    if (reply != null) { return reply[stateProperty]; }
+}
 const stateAttach = (stateProperty, reply, state)=>{
+    if (stateProperty == null) { return state; }
     if (reply == null) { return {[stateProperty]:state}; }
     reply[stateProperty] = state;
     return reply;
