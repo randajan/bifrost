@@ -23,7 +23,9 @@ export const useBeamSet = (beam, replyInit)=>{
 
     const set = async state=>{
         if (!beam) { return; }
-        setReply(await beam.set(state, myid));
+        const reply = await beam.set(state, myid)
+        setReply(reply);
+        return reply;
     };
 
     return [reply, set];
@@ -38,6 +40,7 @@ export const useBeam = (beam, stateInit, replyInit)=>{
         if (!beam) { return; }
         const reply = await beam.set(state, myid);
         setStateAndReply([beam.extractRemoteState(reply), reply]);
+        return reply;
     };
 
     useEffect(_=>{
