@@ -47,7 +47,7 @@ export class SocketsGroup {
 
     reset(sockets) {
         const { bySocket, set } = _privates.get(this);
-        if (!sockets) { bySocket.forEach(set); }
+        if (!sockets) { bySocket.forEach(set); return; }
         for (const socket of sockets) {
             if (bySocket.has(socket)) { set(bySocket.get(socket), socket); }
         }
