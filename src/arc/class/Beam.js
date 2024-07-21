@@ -34,6 +34,16 @@ const defaultStatesAdapter = opt=>{
     }
 }
 
+const formatReact = reactions=>{
+    if (!reactions) { return; }
+    return (state, args)=>{
+        const { action, actionArguments } = (state || {});
+        if (!action) { throw Error(msg(".Beam", `undefined action`)); }
+        if (!reactions[action]) { throw Error(msg(".Beam", `unknown action '${action}'`)); }
+        return reactions[action](...(actionArguments || []), ...args);
+    }
+}
+
 const formatOpt = (channel, opt, isMultiState)=>{
     if (!opt) { opt = {}; }
     if (!opt.set) {
@@ -49,6 +59,8 @@ const formatOpt = (channel, opt, isMultiState)=>{
         opt.queue.pass = "last";
         opt.queue.returnResult = true;
     }
+    if (!opt.actions) { opt.actions = []; }
+    opt.react = formatReact(opt.reactions);
 
     opt.set = wrapWithTrait(opt.set, opt.trait);
     
@@ -65,7 +77,9 @@ export class Beam {
             remoteStateProp,
             localStateProp,
             allowChanges:ac,
-            queue
+            queue,
+            actions,
+            react
         } = formatOpt(channel, opt, isMultiState);
 
         const _p = {
@@ -76,11 +90,13 @@ export class Beam {
             pending:null,
             remoteStateProp,
             localStateProp,
-            get
+            get,
+            actions,
         }
 
         const propagate = (state, args)=>{ mapList(undefined, _p.watchers, state, ...args); }
         const set = async (state, args)=>{
+            if (react) { state = await react(state, args); }
             const local = await setRaw(state, ...args);
             propagate(stateExtract(localStateProp, local), args); //should propagate only state!!!
             return local;
@@ -133,6 +149,8 @@ export class Beam {
 
         _privates.set(this, _p);
 
+        this.applyActions(this.set.bind(this), this);
+
         register(this, setRx);
     }
 
@@ -170,5 +188,14 @@ export class Beam {
     extractLocalState(reply) {
         const { localStateProp } = _privates.get(this);
         return stateExtract(localStateProp, reply);
+    }
+
+    applyActions(setMethod, target={}) {
+        const { actions } = _privates.get(this);
+        for (let action of actions) {
+            const act = (...a)=>setMethod({action, actionArguments:a});
+            Object.defineProperty(target, action, { value:act });
+        }
+        return target;
     }
 }

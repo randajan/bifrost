@@ -1,5 +1,11 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Beam } from "../../arc/class/Beam";
+
+const useBeamActions = (beam, setMethod)=>{
+    return useMemo(_=>{
+        if (beam) { return beam.applyActions(setMethod, setMethod); }
+    }, [beam]);
+}
 
 export const useBeamGet = (beam, stateInit)=>{
     const myid = useId();
@@ -21,12 +27,11 @@ export const useBeamSet = (beam, replyInit)=>{
     const myid = useId();
     const [reply, setReply] = useState(replyInit);
 
-    const set = async state=>{
-        if (!beam) { return; }
+    const set = useBeamActions(beam, async state=>{
         const reply = await beam.set(state, myid)
         setReply(reply);
         return reply;
-    };
+    });
 
     return [reply, set];
 }
@@ -36,12 +41,12 @@ export const useBeam = (beam, stateInit, replyInit)=>{
 
     const [[state, reply], setStateAndReply] = useState([stateInit, replyInit]);
 
-    const set = async state=>{
-        if (!beam) { return; }
+    const set = useBeamActions(beam, async state=>{
         const reply = await beam.set(state, myid);
         setStateAndReply([beam.extractRemoteState(reply), reply]);
         return reply;
-    };
+    });
+
 
     useEffect(_=>{
         if (!beam) { return; }
