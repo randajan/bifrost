@@ -79,7 +79,8 @@ export class Beam {
             allowChanges:ac,
             queue,
             actions,
-            react
+            react,
+            onError
         } = formatOpt(channel, opt, isMultiState);
 
         const _p = {
@@ -96,8 +97,14 @@ export class Beam {
 
         const propagate = (state, args)=>{ mapList(undefined, _p.watchers, state, ...args); }
         const set = async (state, args)=>{
-            if (react) { state = await react(state, args); }
-            const local = await setRaw(state, ...args);
+            let local;
+            try {
+                if (react) { state = await react(state, args); }
+                local = await setRaw(state, ...args);
+            } catch(error) {
+                if (!onError) { throw error; }
+                local = onError(error, ...args);
+            }
             propagate(stateExtract(localStateProp, local), args); //should propagate only state!!!
             return local;
         }
