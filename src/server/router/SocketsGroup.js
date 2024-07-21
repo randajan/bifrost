@@ -45,14 +45,21 @@ export class SocketsGroup {
 
     }
 
-    resetBy(groupId) {
-        const { get, set } = _privates.get(this);
-        for (const socket of get(groupId)) { set(groupId, socket); }
+    reset(sockets) {
+        const { bySocket, set } = _privates.get(this);
+        if (!sockets) { bySocket.forEach(set); }
+        for (const socket of sockets) {
+            if (bySocket.has(socket)) { set(bySocket.get(socket), socket); }
+        }
     }
 
-    reset() {
-        const { bySocket, set } = _privates.get(this);
-        bySocket.forEach(set);
+    resetSocket(socket) {
+        return this.reset([socket]);
+    }
+
+    resetGroup(groupId) {
+        const { get } = _privates.get(this);
+        return this.reset(get(groupId));
     }
 
     get(groupId) {
