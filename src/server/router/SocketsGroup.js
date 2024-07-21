@@ -30,8 +30,7 @@ export class SocketsGroup {
             add(toId, socket);
         }
 
-        const get = id=>byId.has(id) ? byId.get(id) : [];
-        const reset = _=>bySocket.forEach(set);
+        const get = id=>byId.has(id) ? byId.get(id) : (new Set());
 
         Object.defineProperty(this, "router", {
             value:router, enumerable:true
@@ -42,12 +41,18 @@ export class SocketsGroup {
             return _=>{ remove(bySocket.get(socket), socket); };
         });
 
-        _privates.set(this, { getSocketGroupId, add, set, get, reset });
+        _privates.set(this, { bySocket, byId, getSocketGroupId, add, set, get });
 
     }
 
+    resetBy(groupId) {
+        const { get, set } = _privates.get(this);
+        for (const socket of get(groupId)) { set(groupId, socket); }
+    }
+
     reset() {
-        _privates.get(this).reset();
+        const { bySocket, set } = _privates.get(this);
+        bySocket.forEach(set);
     }
 
     get(groupId) {
