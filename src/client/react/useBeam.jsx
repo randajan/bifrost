@@ -94,6 +94,6 @@ Beam.prototype.Provider = function (props) { return <BeamProvider {...props} bea
 Beam.prototype.Consumer = function (props) { return <BeamConsumer {...props} beam={this}/>; }
 Beam.prototype.with = function (Element) { return withBeam(this, Element); }
 
-Beam.prototype.use = function (replyInit) { return useBeam(this, replyInit); }
+Beam.prototype.use = function (stateInit, replyInit) { return useBeam(this, stateInit, replyInit); }
 Beam.prototype.useSet = function (replyInit) { return useBeamSet(this, replyInit); }
-Beam.prototype.useGet = function () { return useBeamGet(this); }
+Beam.prototype.useGet = function (stateInit) { return useBeamGet(this, stateInit); }
