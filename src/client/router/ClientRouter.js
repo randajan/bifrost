@@ -17,11 +17,7 @@ export class ClientRouter {
 
         _privates.set(this, _p);
     }
-
-    async lock(key, execute, ...args) {
-        return _privates.get(this).txLock(key, execute, ...args);
-    }
-
+    
     async tx(channel, transceiver) {
         const { socket } = _privates.get(this);
         const rnbl = typeof transceiver === "function";

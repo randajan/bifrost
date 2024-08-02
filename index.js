@@ -9,6 +9,9 @@ slib(
         mode:isServer?"node":"web",
         minify:false,
         lib:{
+            loader:{
+                ".js":"jsx"
+            },
             entries:[
                 "server/index.js",
                 "client/index.js",

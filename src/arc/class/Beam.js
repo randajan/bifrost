@@ -150,6 +150,7 @@ export class Beam {
             router:{ value:router},
             channel:{ enumerable, value:channel },
             isPending:{ enumerable, get:_=>!!_p.pending },
+            isDone:{ enumerable, get:_=>_p.status === "ready" || _p.status === "error" },
             status:{ enumerable, get:_=>_p.status },
             allowChanges:{ enumerable, value:ac }
         });

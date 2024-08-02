@@ -1,11 +1,14 @@
 
 
 
-import { useBeamGet, useBeamSet, useBeam } from "./useBeam";
+import { BeamConsumer, BeamProvider, useBeamGet, useBeamSet, useBeam, withBeam } from "./useBeam";
 
 
 export {
-    useBeamGet,
+    BeamConsumer,
+    BeamProvider,
     useBeamSet,
-    useBeam
+    useBeamGet,
+    useBeam,
+    withBeam
 }

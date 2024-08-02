@@ -1,18 +1,6 @@
 import React, { useEffect, useRef } from "react";
-
-import { bifrost } from "./testRouter";
-
-import { useBeam } from "../../../dist/client/react";
-
-//Test beam
-const beam = window.beam = bifrost.createBeam("munin", {
-    remoteStateProp:"text",
-    queue:{
-        softMs:1000,
-        maxSize:10
-    },
-    actions:["write", "erase"]
-});
+import { beam } from "./beam";
+import { withBeam } from "../../../dist/client/react";
 
 export const TestBeam = ()=>{
 
@@ -33,4 +21,4 @@ export const TestBeam = ()=>{
             <textarea ref={ref} onInput={onInput}/>
         </div>
     )
-}
+};
