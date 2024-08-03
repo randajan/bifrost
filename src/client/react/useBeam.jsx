@@ -29,8 +29,8 @@ const useBeamActions = (beam, setReply)=>{
     }, [beam]);
 }
 
-const useBeamState = (beam, stateInit)=>{
-    const [state, setState] = useState(stateInit);
+const useBeamState = (beam)=>{
+    const [state, setState] = useState();
 
     useEffect(_=>{
         validateBeam(beam);
@@ -42,13 +42,19 @@ const useBeamState = (beam, stateInit)=>{
     return state;
 }
 
+const useBeamReplyAcknowledge = (beam, reply)=>{
+    const context = useBeamContext(beam);
+    const value = useContext(context);
+    if (!value || value.state === beam.extractRemoteState(reply)) { return reply; }
+}
+
 
 export const BeamProvider = props=>{
-    const { beam, children, stateInit } = props;
+    const { beam, children } = props;
     const context = useBeamContext(beam);
     if (useContext(context)) { return <>{children}</>; }
 
-    const state = useBeamState(beam, stateInit);
+    const state = useBeamState(beam);
 
     return <context.Provider value={{state}} children={children}/>;
 }
@@ -59,28 +65,26 @@ export const BeamConsumer = props=>{
     return <context.Consumer children={children}/>;
 }
 
-export const useBeamGet = (beam, stateInit)=>{
+export const useBeamGet = (beam)=>{
     const context = useBeamContext(beam);
     const value = useContext(context);
-    if (!value) { throw Error(msg(".use(beam, ...)", "require beam.Provider")); }
-    return value.state;
+    return value ? value.state : useBeamState(beam);
 }
 
-export const useBeamSet = (beam, replyInit)=>{
-    const context = useBeamContext(beam);
-    if (!useContext(context)) { throw Error(msg(".use(beam, ...)", "require beam.Provider")); }
+export const useBeamSet = (beam, autoAcknowledge=true)=>{
+    const [replyRaw, setReply] = useState();
 
-    const [{current}, setCurrent] = useState({current:{reply:replyInit}});
+    const set = useBeamActions(beam, setReply);
+    const ack = _=>{ setReply(); };
 
-    const set = useBeamActions(beam, reply=>current.reply = reply);
-    const ack = _=>{ delete current.reply; setCurrent({current}); };
+    const reply = autoAcknowledge ? useBeamReplyAcknowledge(beam, replyRaw) : replyRaw;
 
-    return [current.reply, set, ack];
+    return [reply, set, ack];
 }
 
-export const useBeam = (beam, stateInit, replyInit)=>{
-    const state = useBeamGet(beam, stateInit);
-    const [reply, set, ack] = useBeamSet(beam, replyInit);
+export const useBeam = (beam, autoAcknowledge=true)=>{
+    const state = useBeamGet(beam);
+    const [reply, set, ack] = useBeamSet(beam, autoAcknowledge);
     return [state, set, reply, ack];
 }
 
@@ -97,6 +101,6 @@ Beam.prototype.Provider = function (props) { return <BeamProvider {...props} bea
 Beam.prototype.Consumer = function (props) { return <BeamConsumer {...props} beam={this}/>; }
 Beam.prototype.with = function (Element) { return withBeam(this, Element); }
 
-Beam.prototype.use = function (stateInit, replyInit) { return useBeam(this, stateInit, replyInit); }
-Beam.prototype.useSet = function (replyInit) { return useBeamSet(this, replyInit); }
-Beam.prototype.useGet = function (stateInit) { return useBeamGet(this, stateInit); }
+Beam.prototype.useGet = function () { return useBeamGet(this); }
+Beam.prototype.useSet = function (autoAcknowledge=true) { return useBeamSet(this, autoAcknowledge); }
+Beam.prototype.use = function (autoAcknowledge=true) { return useBeam(this, autoAcknowledge); }
