@@ -5,7 +5,7 @@ import { msg } from "../../arc/tools";
 const _contexts = new WeakMap();
 
 const validateBeam = (beam)=>{
-    if (!(beam instanceof Beam)) { throw Error(msg("/react", "must be instanceof Beam")); }
+    if (!(beam instanceof Beam)) { throw Error(msg(".use(beam, ...)", "beam must be instance of Beam")); }
 }
 
 const getContext = beam=>{
@@ -62,23 +62,26 @@ export const BeamConsumer = props=>{
 export const useBeamGet = (beam, stateInit)=>{
     const context = useBeamContext(beam);
     const value = useContext(context);
-    if (value) { return value.state; }
-
-    return useBeamState(beam, stateInit);
+    if (!value) { throw Error(msg(".use(beam, ...)", "require beam.Provider")); }
+    return value.state;
 }
 
 export const useBeamSet = (beam, replyInit)=>{
-    const [reply, setReply] = useState(replyInit);
+    const context = useBeamContext(beam);
+    if (!useContext(context)) { throw Error(msg(".use(beam, ...)", "require beam.Provider")); }
 
-    const set = useBeamActions(beam, reply=>setReply(reply));
+    const [{current}, setCurrent] = useState({current:{reply:replyInit}});
 
-    return [reply, set];
+    const set = useBeamActions(beam, reply=>current.reply = reply);
+    const ack = _=>{ delete current.reply; setCurrent({current}); };
+
+    return [current.reply, set, ack];
 }
 
 export const useBeam = (beam, stateInit, replyInit)=>{
     const state = useBeamGet(beam, stateInit);
-    const [reply, set] = useBeamSet(beam, replyInit);
-    return [state, set, reply];
+    const [reply, set, ack] = useBeamSet(beam, replyInit);
+    return [state, set, reply, ack];
 }
 
 export const withBeam = (beam, Element)=>{
