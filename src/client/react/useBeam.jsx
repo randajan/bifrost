@@ -78,9 +78,9 @@ export const useBeamSet = (beam, autoAcknowledge=true)=>{
     const [replyRaw, setReply] = useState();
 
     const set = useBeamActions(beam, setReply);
-    const ack = _=>{ setReply(); };
-
     const reply = autoAcknowledge ? useBeamReplyAcknowledge(beam, replyRaw) : replyRaw;
+
+    const ack = _=>{ if (reply) { setReply(); }; };
 
     return [reply, set, ack];
 }
