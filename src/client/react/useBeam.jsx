@@ -16,6 +16,11 @@ const getContext = beam=>{
 }
 
 const useBeamContext = beam=>useMemo(_=>getContext(beam), [beam]);
+const useBeamContextValue = (beam, expectProvider=true)=>{
+    const value = useContext(useBeamContext(beam));
+    if (value || !expectProvider) { return value; }
+    console.warn(msg(".use(beam, expectProvider)", "provider is expected. Set expectProvider to false to suppress this error"))
+}
 
 const useBeamActions = (beam, setReply)=>{
     return useMemo(_=>{
@@ -43,8 +48,7 @@ const useBeamState = (beam)=>{
 }
 
 const useBeamReplyAcknowledge = (beam, reply)=>{
-    const context = useBeamContext(beam);
-    const value = useContext(context);
+    const value = useBeamContextValue(beam, true);
     if (!value || value.state === beam.extractRemoteState(reply)) { return reply; }
 }
 
@@ -65,9 +69,8 @@ export const BeamConsumer = props=>{
     return <context.Consumer children={children}/>;
 }
 
-export const useBeamGet = (beam)=>{
-    const context = useBeamContext(beam);
-    const value = useContext(context);
+export const useBeamGet = (beam, expectProvider=true)=>{
+    const value = useBeamContextValue(beam, expectProvider);
     return value ? value.state : useBeamState(beam);
 }
 
@@ -82,8 +85,8 @@ export const useBeamSet = (beam, autoAcknowledge=true)=>{
     return [reply, set, ack];
 }
 
-export const useBeam = (beam, autoAcknowledge=true)=>{
-    const state = useBeamGet(beam);
+export const useBeam = (beam, autoAcknowledge=true, expectProvider=true)=>{
+    const state = useBeamGet(beam, expectProvider);
     const [reply, set, ack] = useBeamSet(beam, autoAcknowledge);
     return [state, set, reply, ack];
 }
@@ -101,6 +104,8 @@ Beam.prototype.Provider = function (props) { return <BeamProvider {...props} bea
 Beam.prototype.Consumer = function (props) { return <BeamConsumer {...props} beam={this}/>; }
 Beam.prototype.with = function (Element) { return withBeam(this, Element); }
 
-Beam.prototype.useGet = function () { return useBeamGet(this); }
+Beam.prototype.useGet = function (expectProvider) { return useBeamGet(this, expectProvider); }
 Beam.prototype.useSet = function (autoAcknowledge=true) { return useBeamSet(this, autoAcknowledge); }
-Beam.prototype.use = function (autoAcknowledge=true) { return useBeam(this, autoAcknowledge); }
+Beam.prototype.use = function (autoAcknowledge=true, expectProvider=true) {
+    return useBeam(this, autoAcknowledge, expectProvider);
+}

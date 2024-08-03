@@ -2,9 +2,9 @@ import React, { useEffect, useRef } from "react";
 import { beam } from "./beam";
 import { withBeam } from "../../../dist/client/react";
 
-export const TestBeams = beam.with(()=>{
+export const TestBeam = beam.with(()=>{
 
-    const [ state, set, reply, ack ] = beam.use(false);
+    const [ state, set, reply, ack ] = beam.use();
 
     const ref = useRef();
 
