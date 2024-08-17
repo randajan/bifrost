@@ -1,5 +1,5 @@
 import { deaf, emit, hear, msg } from "../../arc/tools";
-import { Beam } from "../../arc/class/Beam";
+import { Beam } from "../../arc/beam/Beam";
 
 const _privates = new WeakMap();
 

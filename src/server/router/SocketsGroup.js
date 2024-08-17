@@ -1,4 +1,4 @@
-import { Beam } from "../../arc/class/Beam";
+import { Beam } from "../../arc/beam/Beam";
 
 const _privates = new WeakMap();
 

@@ -1,4 +1,4 @@
-import { Beam } from "../../arc/class/Beam";
+import { Beam } from "../../arc/beam/Beam";
 import { deaf, emit, hear, registerExe, mapList, mapSockets, msg } from "../../arc/tools";
 import { SocketsGroup } from "./SocketsGroup";
 

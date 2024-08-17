@@ -1,71 +1,8 @@
-import { createQueue } from "@randajan/queue";
 import { mapList, msg, registerExe } from "../tools";
+import { wrapWithQueue, stateExtract, stateAttach, formatOpt } from "./helpers";
 
 const enumerable = true;
 const _privates = new WeakMap();
-
-const wrapWithQueue = (exe, queue)=>!queue ? exe : createQueue(exe, queue);
-const wrapWithTrait = (exe, trait)=>!trait ? exe : async (s, ...a)=>exe(await trait(s, ...a), ...a);
-
-const stateExtract = (stateProperty, reply)=>{
-    if (stateProperty == null) { return reply; }
-    if (reply != null) { return reply[stateProperty]; }
-}
-const stateAttach = (stateProperty, reply, state)=>{
-    if (stateProperty == null) { return state; }
-    if (reply == null) { return {[stateProperty]:state}; }
-    reply[stateProperty] = state;
-    return reply;
-}
-
-const defaultStateAdapter = opt=>{
-    let state;
-    opt.get = _=>state;
-    opt.set = newState=>state=newState;
-}
-
-const defaultStatesAdapter = opt=>{
-    const states = new Map();
-    opt.get = (groupId)=>states.get(groupId);
-    opt.set = (state, groupId)=>{
-        if (state == null) { states.delete(groupId); }
-        else { states.set(groupId, state); }
-        return state;
-    }
-}
-
-const formatReact = reactions=>{
-    if (!reactions) { return; }
-    return (state, args)=>{
-        const { action, actionArguments } = (state || {});
-        if (!action) { throw Error(msg(".Beam", `undefined action`)); }
-        if (!reactions[action]) { throw Error(msg(".Beam", `unknown action '${action}'`)); }
-        return reactions[action](...(actionArguments || []), ...args);
-    }
-}
-
-const formatOpt = (channel, opt, isMultiState)=>{
-    if (!opt) { opt = {}; }
-    if (!opt.set) {
-        if (opt.get) { opt.allowChanges = "none"; }
-        opt.set = opt.get;
-    }
-    if (!opt.get) {
-        if (opt.set) { throw Error(msg(".Beam(opt)", "contain set property without get", {channel})); }
-        if (!isMultiState) { defaultStateAdapter(opt); }
-        else { defaultStatesAdapter(opt); }
-    }
-    if (opt.queue) {
-        opt.queue.pass = "last";
-        opt.queue.returnResult = true;
-    }
-    if (!opt.actions) { opt.actions = []; }
-    opt.react = formatReact(opt.reactions);
-
-    opt.set = wrapWithTrait(opt.set, opt.trait);
-    
-    return opt;
-}
 
 export class Beam {
 
@@ -152,7 +89,7 @@ export class Beam {
             isPending:{ enumerable, get:_=>!!_p.pending },
             isDone:{ enumerable, get:_=>_p.status === "ready" || _p.status === "error" },
             status:{ enumerable, get:_=>_p.status },
-            allowChanges:{ enumerable, value:ac }
+            allowChanges:{ enumerable, value:ac },
         });
 
         _privates.set(this, _p);
@@ -165,6 +102,12 @@ export class Beam {
     async refresh(...args) {
         const { pending, pull} = _privates.get(this);
         if (pending) { await pending; } else { await pull(args); }
+    }
+
+    getRaw(...args) {
+        const { status, pull, get } = _privates.get(this);
+        if (status === "init") { pull(args); }
+        return get(...args);
     }
 
     async get(...args) {

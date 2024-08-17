@@ -3,8 +3,7 @@ import { beam } from "./beam";
 import { withBeam } from "../../../dist/client/react";
 
 export const TestBeam = beam.with(()=>{
-
-    const [ state, set, reply, ack ] = beam.use();
+    const { state, set, reply, confirm } = beam.use();
 
     const ref = useRef();
 
@@ -19,7 +18,7 @@ export const TestBeam = beam.with(()=>{
     return (
         <div className="App">
             <textarea ref={ref} onInput={onInput}/>
-            <button onClick={ack}>{JSON.stringify(reply)}</button>
+            <button onClick={confirm}>{JSON.stringify(reply)}</button>
         </div>
     )
 });
