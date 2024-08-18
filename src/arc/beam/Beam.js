@@ -40,7 +40,7 @@ export class Beam {
                 local = await setRaw(state, ...args);
             } catch(error) {
                 if (!onError) { throw error; }
-                local = onError(error, ...args);
+                local = await onError(error, ...args);
             }
             propagate(stateExtract(localStateProp, local), args); //should propagate only state!!!
             return local;
