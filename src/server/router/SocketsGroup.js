@@ -94,7 +94,8 @@ export class SocketsGroup {
                 });
 
                 beam.watch((state, groupId, sourceSocket)=>{
-                    return this.tx(channel, groupId, state, sourceSocket);
+                    if (!sourceSocket) { return this.tx(channel, groupId, state); }
+                    else { return this.txBroad(channel, state, sourceSocket); }
                 });
             }
         }, opt);
