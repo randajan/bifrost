@@ -55,30 +55,38 @@ bifrost.rx("color", (socket)=>{
     return socket.color;
 });
 
+const byColor = bifrost.createGroup("byColor", "color");
 
 //Test beam by group
-(async ()=>{
-    const textByColor = {};
+const textByColor = {};
 
-    const beam = bifrost.createGroup("byColor", socket=>socket.color).createBeam("munin", {
-        get:(color)=>textByColor[color],
-        set:(text, color)=>{
-            textByColor[color] = text;
-            return {isDone:true, text}
+const beam = byColor.createBeam("munin", {
+    get:(color)=>textByColor[color],
+    set:(text, color)=>{
+        textByColor[color] = text;
+        return {isDone:true, text}
+    },
+    localStateProp:"text",
+    reactions:{
+        erase:_=>{
+            
         },
-        localStateProp:"text",
-        reactions:{
-            erase:_=>{
-                
-            },
-            write:text=>{
-                console.log(text);
-                return text;
-            }
+        write:text=>{
+            console.log(text);
+            return text;
         }
-    });
+    }
+});
 
-})();
+setInterval(_=>{
+    
+    byColor.get("green").map(socket=>{
+        socket.color = "blue";
+        //byColor.resetSocket(socket);
+        console.log(socket.color);
+    });
+    
+}, 5000);
 
 
 

@@ -1,33 +1,47 @@
 import { Beam } from "../../arc/beam/Beam";
+import { mapList, msg, registerExe } from "../../arc/tools";
 
 const _privates = new WeakMap();
 
+const validateSocketGroupProp = socketGroupProp=>{
+    const type = typeof socketGroupProp;
+    if (type === "function") { return [socketGroupProp]; }
+    if (type === "string") { return [socket=>socket[socketGroupProp], socketGroupProp]; }
+    throw Error(msg("SocketGroup", `socketGroupProp must be typeof function or string. Got '${type}' instead`)); 
+}
+
 export class SocketsGroup {
 
-    constructor(router, getSocketGroupId) {
+    constructor(router, socketGroupProp) {
+
+        const [getSocketGroupId, groupProp] = validateSocketGroupProp(socketGroupProp);
 
         const byId = new Map();
         const bySocket = new Map();
+        const watchers = [];
 
-        const remove = (fromId, socket)=>{
+        const remove = (fromId, socket, propagate=true)=>{
             const from = byId.get(fromId);
             from.delete(socket);
             if (!from.size) { byId.delete(fromId); }
             bySocket.delete(socket);
+            if (propagate) { mapList(undefined, watchers, socket, "farewell", undefined, fromId); }
         }
 
-        const add = (toId, socket)=>{
+        const add = (toId, socket, propagate=true)=>{
             let to = byId.get(toId);
             if (!to) { byId.set(toId, to = new Set()); }
             to.add(socket);
             bySocket.set(socket, toId);
+            if (propagate) { mapList(undefined, watchers, socket, "welcome", toId); }
         }
 
         const set = (fromId, socket)=>{
             const toId = getSocketGroupId(socket);
             if (fromId === toId) { return; }
-            remove(fromId, socket);
-            add(toId, socket);
+            remove(fromId, socket, false);
+            add(toId, socket, false);
+            mapList(undefined, watchers, socket, "reset", toId, fromId);
         }
 
         const get = id=>byId.has(id) ? byId.get(id) : (new Set());
@@ -37,12 +51,29 @@ export class SocketsGroup {
         });
 
         router.welcome(socket=>{
+            if (groupProp) {
+                let currentId = socket[groupProp];
+                Object.defineProperty(socket, groupProp, {
+                    enumerable:true,
+                    get:_=>currentId,
+                    set:toId=>{
+                        const fromId = currentId;
+                        currentId = toId;
+                        set(fromId, socket);
+                    }
+                });
+            }
             add(getSocketGroupId(socket), socket);
             return _=>{ remove(bySocket.get(socket), socket); };
         });
 
-        _privates.set(this, { bySocket, byId, getSocketGroupId, add, set, get });
+        _privates.set(this, { bySocket, byId, getSocketGroupId, add, set, get, watchers });
 
+    }
+
+    watch(watcher) {
+        const { watchers} = _privates.get(this);
+        return registerExe(watchers, watcher);
     }
 
     reset(sockets) {
@@ -87,10 +118,16 @@ export class SocketsGroup {
         return new Beam(this, channel, {
             isMultiState:true,
             register:(beam, set)=>{
+
                 this.router.rx(channel, async (socket, { isSet, state })=>{
                     const groupId = _p.getSocketGroupId(socket);
                     if (!isSet) { return beam.get(groupId, socket); }
                     return set(state, groupId, socket);
+                });
+
+                this.watch(async (socket, event, groupId)=>{
+                    if (event !== "reset") { return; }
+                    this.router.tx(channel, [socket], await beam.get(groupId, socket));
                 });
 
                 beam.watch((state, groupId, sourceSocket)=>{
