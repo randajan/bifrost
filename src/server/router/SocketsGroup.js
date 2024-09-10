@@ -22,6 +22,7 @@ export class SocketsGroup {
 
         const remove = (fromId, socket, propagate=true)=>{
             const from = byId.get(fromId);
+            if (!from) { return; }
             from.delete(socket);
             if (!from.size) { byId.delete(fromId); }
             bySocket.delete(socket);
