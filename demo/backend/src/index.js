@@ -20,6 +20,7 @@ const io = new IO(http, {
 
 //Create router using Socket.io API
 const bifrost = new BifrostRouter(io);
+const byColor = bifrost.createGroup("byColor", "color");
 
 let toggle = false;
 
@@ -55,8 +56,6 @@ bifrost.rx("color", (socket)=>{
     return socket.color;
 });
 
-const byColor = bifrost.createGroup("byColor", "color");
-
 //Test beam by group
 const textByColor = {};
 
@@ -87,7 +86,3 @@ setInterval(_=>{
     });
     
 }, 5000);
-
-
-
-bifrost.createBeam("test");

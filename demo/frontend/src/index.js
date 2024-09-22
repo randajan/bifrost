@@ -8,3 +8,4 @@ import { TestBeam } from "./TestBeam";
 const root = document.getElementById("root");
 
 createRoot(root).render(<TestBeam/>);
+

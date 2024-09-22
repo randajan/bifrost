@@ -28,3 +28,7 @@ bifrost.tx("color", async (tx)=>{
     const color = await tx();
     document.getElementsByTagName("body")[0].style["background-color"] = color;
 });
+
+bifrost.rx("stuckTest", _=>{
+    throw Error("What a nice error");
+});

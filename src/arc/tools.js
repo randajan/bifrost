@@ -1,3 +1,4 @@
+const _bifrostEvent = "__$$BifrostDataChannel__"; ///do not change
 
 export const msg = (method, text, descObj={})=>{
     let desc = "";
@@ -5,25 +6,54 @@ export const msg = (method, text, descObj={})=>{
     return `Bifrost${method}${desc} ${text}`;
 };
 
-export const emit = async (socket, channel, body)=>{
+const packError = err=>{
+    if (!(err instanceof Error)) { return err; }
+    const e = {};
+    for (let prop in Object.getOwnPropertyDescriptors(err)) { e[prop] = err[prop]; }
+    const { channel } = err;
+    const extend = msg("", "remote", {channel});
+    e.message = extend+" "+e.message;
+    e.stack = extend+" "+e.stack;
+    return e;
+}
+
+const unpackError = err=>{
+    if (!err?.message) { return err; }
+    const e = new Error(err.message);
+    for (let prop in err) { e[prop] = err[prop]; }
+    return e;
+}
+
+export const validateOnError = (onError)=>{
+    if (typeof onError === "function") { return onError; }
+    return ()=>{};
+}
+
+export const emit = async (socket, channel, body, onError)=>{
     return new Promise((res, rej)=>{
-        socket.emit(channel, body, (ok, body)=>{
-            if (ok) { res(body); } else { rej(body); }
+        socket.emit(_bifrostEvent, {channel, body}, (ok, response)=>{
+            if (ok) { return res(response); }
+            const err = unpackError(response);
+            rej(err);
+            onError(err);
         });
     });
 }
 
-export const hear = (socket, channel, receiver)=>{
-    socket.on(channel, async (body, ack)=>{
-        try { await ack(true, await receiver(socket, body)); }
+export const hear = (socket, getChannel, onError)=>{
+    const listener = async ({channel, body}, ack)=>{
+        const receiver = getChannel(channel);
+        try { await ack(true, !receiver ? undefined : await receiver(socket, body)); }
         catch (err) {
-            console.error(err);
-            await ack(false, `Remote error: ${err}`);
+            err.channel = channel;
+            await ack(false, packError(err));
+            onError(err);
         }
-    });
-}
+    }
 
-export const deaf = (socket, channel)=>{ socket.off(channel); }
+    socket.on(_bifrostEvent, listener);
+    return _=>socket.off(_bifrostEvent, listener);
+}
 
 
 export const unregisterExe = (list, exe)=>{

@@ -1,5 +1,5 @@
 import { Beam } from "../../arc/beam/Beam";
-import { deaf, emit, hear, registerExe, mapList, mapSockets, msg } from "../../arc/tools";
+import { emit, hear, registerExe, mapList, mapSockets, msg, validateOnError } from "../../arc/tools";
 import { SocketsGroup } from "./SocketsGroup";
 
 const _privates = new WeakMap();
@@ -7,13 +7,16 @@ const _privates = new WeakMap();
 const enumerable = true;
 export class ServerRouter {
 
-    constructor(io) {
+    constructor(io, onError) {
+        onError = validateOnError(onError);
+
         const _p = {
             channels:new Map(),
             groups:new Map(),
             sockets:new Set(),
             welcomes:[],
-            farewells:[]
+            farewells:[],
+            onError
         }
 
         Object.defineProperties(this, {
@@ -24,9 +27,10 @@ export class ServerRouter {
 
         io.on("connection", async socket=>{
             _p.sockets.add(socket);
-            _p.channels.forEach((receiver, channel)=>{ hear(socket, channel, receiver); });
+            const deaf = hear(socket, channel=>_p.channels.get(channel), onError);
             const cleanUp = [];
             socket.on("disconnect", async _=>{
+                deaf(socket);
                 await mapList(undefined, cleanUp, socket);
                 await mapList(undefined, _p.farewells, socket);
                 _p.sockets.delete(socket);
@@ -63,8 +67,9 @@ export class ServerRouter {
     }
 
     async tx(channel, sockets, transceiver, excludeSocket) {
+        const { onError } = _privates.get(this);
         const rnbl = typeof transceiver === "function";
-        const exe = rnbl ? socket=>transceiver(body=>emit(socket, channel, body), socket) : socket=>emit(socket, channel, transceiver);
+        const exe = rnbl ? socket=>transceiver(body=>emit(socket, channel, body, onError), socket) : socket=>emit(socket, channel, transceiver, onError);
 
         return Promise.all(mapSockets(sockets, exe, excludeSocket));
     }
@@ -74,16 +79,14 @@ export class ServerRouter {
     }
 
     rx(channel, receiver) {
-        const { channels, sockets } = _privates.get(this);
+        const { channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(msg("Router.rx(...)", `allready registered!`, {channel})); }
 
         channels.set(channel, receiver);
-        sockets.forEach(socket=>{ hear(socket, channel, receiver); });
 
         return _=>{
             if (!channels.has(channel)) { return false; }
             channels.delete(channel);
-            sockets.forEach(socket=>{ deaf(socket, channel); });
             return true;
         }
     }

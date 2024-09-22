@@ -1,42 +1,45 @@
-import { deaf, emit, hear, msg } from "../../arc/tools";
+import { emit, hear, msg, validateOnError } from "../../arc/tools";
 import { Beam } from "../../arc/beam/Beam";
 
 const _privates = new WeakMap();
 
 export class ClientRouter {
 
-    constructor(socket) {
+    constructor(socket, onError) {
+        onError = validateOnError(onError);
+        
         const _p = {
             socket,
-            channels:new Map()
+            channels:new Map(),
+            onError
         }
 
         Object.defineProperties(this, {
             socket:{ value:socket }
         });
 
+        hear(socket, channel=>_p.channels.get(channel), onError);
+
         _privates.set(this, _p);
     }
     
     async tx(channel, transceiver) {
-        const { socket } = _privates.get(this);
+        const { socket, onError } = _privates.get(this);
         const rnbl = typeof transceiver === "function";
 
-        if (!rnbl) { return emit(socket, channel, transceiver); }
-        return transceiver(body=>emit(socket, channel, body));
+        if (!rnbl) { return emit(socket, channel, transceiver, onError); }
+        return transceiver(body=>emit(socket, channel, body, onError));
     }
 
     rx(channel, receiver) {
-        const { socket, channels } = _privates.get(this);
+        const { channels } = _privates.get(this);
         if (channels.has(channel)) { throw Error(msg("Router", `allready exist!`, {channel})); }
 
         channels.set(channel, receiver);
-        hear(socket, channel, receiver);
 
         return _=>{
             if (!channels.has(channel)) { return false; }
             channels.delete(channel);
-            deaf(socket, channel);
             return true;
         }
     }
