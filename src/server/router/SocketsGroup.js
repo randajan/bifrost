@@ -1,5 +1,5 @@
-import { Beam } from "../../arc/beam/Beam";
 import { mapList, msg, registerExe } from "../../arc/tools";
+import createVault from "@randajan/vault-kit";
 
 const _privates = new WeakMap();
 
@@ -115,28 +115,30 @@ export class SocketsGroup {
 
     createBeam(channel, opt={}) {
         const _p = _privates.get(this);
+        
+        const beam = createVault({
+            ...opt,
+            hasMany:true,
+        });
 
-        return new Beam(this, channel, {
-            isMultiState:true,
-            register:(beam, set)=>{
+        this.router.rx(channel, async (socket, { isSet, data })=>{
+            const groupId = _p.getSocketGroupId(socket);
+            if (!isSet) { return beam.get(groupId, socket); }
+            return beam.set(data, groupId, socket);
+        });
 
-                this.router.rx(channel, async (socket, { isSet, state })=>{
-                    const groupId = _p.getSocketGroupId(socket);
-                    if (!isSet) { return beam.get(groupId, socket); }
-                    return set(state, groupId, socket);
-                });
+        this.watch(async (socket, event, groupId)=>{
+            if (event !== "reset") { return; }
+            this.router.tx(channel, [socket], await beam.get(groupId, socket));
+        });
 
-                this.watch(async (socket, event, groupId)=>{
-                    if (event !== "reset") { return; }
-                    this.router.tx(channel, [socket], await beam.get(groupId, socket));
-                });
+        beam.on(({status, data}, groupId, sourceSocket)=>{
+            if (status !== "ready" && status !== "expired") { return; }
+            if (!sourceSocket) { return this.tx(channel, groupId, data); }
+            else { return this.txBroad(channel, data, sourceSocket); }
+        });
 
-                beam.watch((state, groupId, sourceSocket)=>{
-                    if (!sourceSocket) { return this.tx(channel, groupId, state); }
-                    else { return this.txBroad(channel, state, sourceSocket); }
-                });
-            }
-        }, opt);
+        return beam;
     }
 
 }

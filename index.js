@@ -7,6 +7,7 @@ slib(
     {
         port:3005,
         mode:isServer?"node":"web",
+        rebuildBuffer:isServer ? 500 : 100,
         minify:false,
         lib:{
             loader:{

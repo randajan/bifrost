@@ -1,5 +1,5 @@
 import { emit, hear, msg, validateOnError } from "../../arc/tools";
-import { Beam } from "../../arc/beam/Beam";
+import createVault from "@randajan/vault-kit";
 
 const _privates = new WeakMap();
 
@@ -45,17 +45,14 @@ export class ClientRouter {
     }
 
     createBeam(channel, opt={}) {
-        return new Beam(this, channel, {
-            pull:async _=>{
-                return this.tx(channel, {isSet:false});
-            },
-            push:(state)=>{
-                return this.tx(channel, {isSet:true, state});
-            },
-            register:(beam, set)=>{
-                this.rx(channel, (socket, state)=>set(state));
+        return createVault({
+            ...opt,
+            remote:{
+                pull:_=>this.tx(channel, {isSet:false}),
+                push:data=>this.tx(channel, {isSet:true, data}),
+                init:set=>this.rx(channel, (socket, data)=>set(data))
             }
-        }, opt);
+        });
     }
 
 }

@@ -4,12 +4,19 @@
   "description": "Teleport your data from backend to frontend effortless",
   "repository": "randajan/bifrost",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
   "exports": {
-    "./server": "./dist/server/index.js",
-    "./client": "./dist/client/index.js",
-    "./client/react": "./dist/client/react/index.js"
+    "./server": {
+      "import": "./dist/esm/server/index.mjs",
+      "require": "./dist/cjs/server/index.cjs"
+    },
+    "./client": {
+      "import": "./dist/esm/client/index.mjs",
+      "require": "./dist/cjs/client/index.cjs"
+    },
+    "./client/react": {
+      "import": "./dist/esm/client/react/index.mjs",
+      "require": "./dist/cjs/client/react/index.cjs"
+    }
   },
   "scripts": {
     "start": "set NODE_ENV=dev&& node ./index.js",
@@ -17,13 +24,16 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@randajan/simple-lib": "^2.3.2",
+    "@randajan/simple-lib": "^3.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@randajan/queue": "^0.1.6",
+    "@randajan/vault-kit": "^2.2.0"
+  },
   "files": [
     "dist",
     "README.md",
@@ -47,7 +57,5 @@
     "email": "jnranda@gmail.com",
     "url": "https://www.linkedin.com/in/randajan/"
   },
-  "peerDependencies": {
-    "@randajan/queue": "^0.1.5"
-  }
+  "peerDependencies": {}
 }

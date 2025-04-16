@@ -59,7 +59,7 @@ bifrost.rx("testChannel", (socket, { msg }) => {
 |-|-|-|-|
 | `tx` | Sends data on the specified channel and processes responses using the provided function. | `channel` - Name of the channel to send data on.<br>`transceiver` - Object or Function for sending data on the channel.<br>*Note:* If `transceiver` is a function, it accepts a async callback parameter for sending data on the channel. | `Promise` - Asynchronous operation that resolves with the result of the data transfer. |
 | `rx` | Registers a receiver function for handling data received on the specified channel. | `channel` - Name of the channel to receive data on.<br>`receiver` - Function for processing received data.<br>*Note:* If `receiver` is a function, it accepts the received data as a parameter. | `Function` - Function for unregistering the receiver from the specified channel. |
-| `createBeam` | Creates interface for easy state sharing | `channel` - Name of the used channel.<br>`opt` - *check Beam.opt description bellow* | `Beam` - Instance of the interface. |
+| `createBeam` | Creates interface for easy data sharing | `channel` - Name of the used channel.<br>`options` - *check ription bellow* | `Beam` - Instance of the interface. |
 
 
 ## Server application
@@ -109,7 +109,7 @@ bifrost.rx("testChannel", (socket, { msg }) => {
 | `farewell` | Registers a function to execute when a socket disconnects from the server. | `execute` - Function to execute when a socket disconnects. | `Function` - Function for unregistering the listener. |
 | `createGroup` | Creates a new group for managing sockets with the specified name and grouper function. | `name` - Name of the group to create.<br>`socketGroupProp` - Function that takes a socket object as input parameter and returns an its groupId OR it could be also string that represent the property name of the socket that represent the groupId. In this case if the socket property changes it's value the group will be auto-reseted | `SocketsGroup` - Instance of the created group. |
 | `getGroup` | Retrieves the group with the specified name. | `name` - Name of the group to retrieve. | `SocketsGroup` - Instance of the requested group. |
-| `createBeam` | Creates interface for easy state sharing | `channel` - Name of the used channel.<br>`opt` - *check Beam.opt description bellow* | `Beam` - Instance of the interface. |
+| `createBeam` | Creates interface for easy data sharing | `channel` - Name of the used channel.<br>`options` - *check description bellow* | `Beam` - Instance of the interface. |
 
 
 ### Server Sockets Groups API
@@ -121,19 +121,16 @@ bifrost.rx("testChannel", (socket, { msg }) => {
 | `watch` | Provide watcher for any group changes. For every change and every socket will be called the watcher separately with arguments watcher(socket, event, toGroupId, fromGroupId). There is threee possible events: welcome, farewell and reset. | - | - |
 | `tx` | Sends data on the specified channel to the sockets associated with the specified group ID using the transceiver function. | `channel` - Name of the channel to send data on.<br>`groupId` - ID of the group to send data to.<br>`transceiver` - Function or code for sending data on the channel. | `Promise` - Asynchronous operation that resolves when all data has been sent. |
 | `txBroad` | Sends data on the specified channel to the sockets associated with the specified group ID using the transceiver function. | `channel` - Name of the channel to send data on.<br>`transceiver` - Function or code for sending data on the channel.<br>`socket` - Source socket for obtain groupId and send data to whole group.<br> `excludeSocket` - Boolean that determines if the provided _socket_ will be excluded from broadcast | `Promise` - Asynchronous operation that resolves when all data has been sent. |
-| `createBeam` | Creates interface for easy state sharing across sockets groups | `channel` - Name of the used channel.<br>`opt` - *check Beam.opt description bellow*  | `Beam` - Instance of the interface. |
+| `createBeam` | Creates interface for easy data sharing across sockets groups | `channel` - Name of the used channel.<br>`options` - *check description bellow*  | `Beam` - Instance of the interface. |
 
 
 ## Beam interface API
 
-Beam is perfect for very easy state sharing across multiple sockets. It can be used instead of REST API.
+Beam is perfect for very easy data sharing across multiple sockets. It can be used instead of REST API.
+Beam was renamed to Vault, improved and moved to separate library [@randajan/vault-kit](https://www.npmjs.com/package/@randajan/vault-kit)
 
-| Function | Description | Parameters | Return Value |
-|-|-|-|-|
-| `refresh` | Updates the state from the server. If a synchronization is in progress, waits for it to complete. | `...args` - additional arguments | `Promise<boolean>` - Returns `true` if the state is ready |
-| `get` | Retrieves the current state. If the state is uninitialized or a synchronization is in progress, waits for it to complete. | `...args` - additional arguments | `Promise<any>` - Returns the current state |
-| `set` | Sets a new state and synchronizes it. | `newState` - new state <br> `...args` - additional arguments | `Promise<any>` - Returns the current state after setting |
-| `watch` | Adds a function to watch for state changes. The function will be called whenever the state changes. | `watcher` - function to be called on state change | `Promise<Function>` - Returns a function to cancel the watcher |
+This project currently uses Vault instead of Beam interface and all options are passed to Vault.
+
 
 ### Additional arguments `...args`
 Argument Differences for Various Beam Implementations:
@@ -146,20 +143,6 @@ First argument is an optional socket client source (Socket.IO) to exclude from n
 
 __Server Group Implementation__
 First argument is groupId to identify a group of sockets. Second argument is an optional socket client source (Socket.IO) to exclude from notifications. Other arguments are optional.
-
-All additional arguments will be passed 1:1 to functions __get__ and __set__ provided by Beam.opt.
-
-### Beam.opt
-
-opt should be an object that contains the following properties:
-
-Name         | Type     | Required / Optional | Description
--------------|----------|---------------------|------------------------------------------------------
-`get`         | Function | Required            | Function that returns the current state. Can be async.
-`set`          | Function | Required            | Function that sets the provided state and returns the current state. Can be async.
-`trait`        | Function | Optional            | Function that processes newState, allowing for state modification or validation. The returned value is passed to set.
-`allowChanges` | String   | Optional            | Enum that can be "local", "remote", or "none". Controls the direction of state change propagation.
-`queue`        | Object   | Optional            | Object representing settings for delayed processing when using the set method. Described in the @randajan/queue package.
 
 
 ## License

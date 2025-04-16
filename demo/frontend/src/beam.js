@@ -1,8 +1,7 @@
 import { bifrost } from "./testRouter";
-import "./../../../dist/client/react";
+import "./../../../dist/esm/client/react/index.mjs";
 
 //Test beam
 export const beam = window.beam = bifrost.createBeam("munin", {
-    remoteStateProp:"text",
-    actions:["write", "erase"]
+    onResponse:"text",
 });

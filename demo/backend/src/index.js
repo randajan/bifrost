@@ -4,7 +4,7 @@ import { info } from "@randajan/simple-lib/node";
 import { createServer as createServerHTTP } from "http";
 import { Server as IO } from "socket.io";
 
-import { BifrostRouter } from "../../../dist/server";
+import { BifrostRouter } from "../../../dist/esm/server/index.mjs";
 
 //Create simple server
 const http = createServerHTTP();
@@ -57,32 +57,27 @@ bifrost.rx("color", (socket)=>{
 });
 
 //Test beam by group
-const textByColor = {};
 
 const beam = byColor.createBeam("munin", {
-    get:(color)=>textByColor[color],
-    set:(text, color)=>{
-        textByColor[color] = text;
-        return {isDone:true, text}
-    },
-    localStateProp:"text",
+    ttl:5000,
     reactions:{
         erase:_=>{
-            
+            return
         },
-        write:text=>{
-            console.log(text);
-            return text;
+        write:(text, id)=>{
+            return text
         }
-    }
+    },
+    onRequest:(text)=>[text, {isDone:true, text}]
 });
 
-setInterval(_=>{
+
+// setInterval(_=>{
     
-    byColor.get("green").map(socket=>{
-        socket.color = "blue";
-        //byColor.resetSocket(socket);
-        console.log(socket.color);
-    });
+//     byColor.get("green").map(socket=>{
+//         socket.color = "blue";
+//         //byColor.resetSocket(socket);
+//         console.log(socket.color);
+//     });
     
-}, 5000);
+// }, 5000);

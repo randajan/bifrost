@@ -1,12 +1,4 @@
+import { useVault } from "@randajan/vault-kit/react";
 
-
-
-import { BeamConsumer, BeamProvider, useBeam, withBeam } from "./useBeam";
-
-
-export {
-    BeamConsumer,
-    BeamProvider,
-    useBeam,
-    withBeam
-}
+export const useBeam = useVault;
+export default useBeam;

@@ -1,6 +1,6 @@
-import { Beam } from "../../arc/beam/Beam";
 import { emit, hear, registerExe, mapList, mapSockets, msg, validateOnError } from "../../arc/tools";
 import { SocketsGroup } from "./SocketsGroup";
+import createVault from "@randajan/vault-kit";
 
 const _privates = new WeakMap();
 
@@ -92,16 +92,16 @@ export class ServerRouter {
     }
 
     createBeam(channel, opt={}) {
-        return new Beam(this, channel, {
-            register:(beam, set)=>{
-                this.rx(channel, async (socket, { isSet, state })=>{
-                    return isSet ? set(state, socket) : beam.get(socket);
-                });
 
-                beam.watch((state, sourceSocket)=>this.txBroad(channel, state, sourceSocket));
-            }
-        }, opt);
+        const beam = createVault(opt);
 
+        this.rx(channel, async (socket, { isSet, data })=>isSet ? beam.set(data, socket) : beam.get(socket));
+        beam.on(({status, data}, sourceSocket)=>{
+            if (status !== "ready" && status !== "expired") { return; }
+            this.txBroad(channel, data, sourceSocket);
+        })
+
+        return beam;
     }
 
 }

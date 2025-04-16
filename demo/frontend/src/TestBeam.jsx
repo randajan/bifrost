@@ -1,19 +1,17 @@
 import React, { useEffect, useRef } from "react";
 import { beam } from "./beam";
-import { withBeam } from "../../../dist/client/react";
+import useBeam from "../../../dist/esm/client/react/index.mjs";
 
-export const TestBeam = beam.with(()=>{
-    const { state, set, reply, confirm } = beam.use();
+export const TestBeam = ()=>{
+    const { data, act, reply, confirm } = beam.use();
 
     const ref = useRef();
 
-    const onInput = ({target:el})=>{
-        set.write(el.value);
-    }
+    const onInput = async ({target:el})=>act.write(el.value);
 
     useEffect(_=>{
-        if (ref?.current) { ref.current.value = (state == null ? "" : state); }
-    }, [ref.current, state]);
+        if (ref?.current) { ref.current.value = (data == null ? "" : data); }
+    }, [ref.current, data]);
 
     return (
         <div className="App">
@@ -21,4 +19,4 @@ export const TestBeam = beam.with(()=>{
             <button onClick={confirm}>{JSON.stringify(reply)}</button>
         </div>
     )
-});
+};

@@ -1,7 +1,7 @@
 import { info } from "@randajan/simple-lib/web";
 
 import socketIOClient from "socket.io-client";
-import { BifrostRouter } from "../../../dist/client";
+import { BifrostRouter } from "../../../dist/esm/client/index.mjs";
 
 //Connect to Socket.io server
 const socket = socketIOClient(`localhost:${info.port+1}`);
