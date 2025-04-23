@@ -44,14 +44,18 @@ export class ClientRouter {
         }
     }
 
+    vaultRemote(channel) {
+        return {
+            pull:_=>this.tx(channel, {isSet:false}),
+            push:data=>this.tx(channel, {isSet:true, data}),
+            init:set=>this.rx(channel, (socket, data)=>set(data))
+        }
+    }
+
     createBeam(channel, opt={}) {
         return createVault({
             ...opt,
-            remote:{
-                pull:_=>this.tx(channel, {isSet:false}),
-                push:data=>this.tx(channel, {isSet:true, data}),
-                init:set=>this.rx(channel, (socket, data)=>set(data))
-            }
+            remote:this.vaultRemote(channel)
         });
     }
 

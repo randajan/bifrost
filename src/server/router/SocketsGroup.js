@@ -113,32 +113,31 @@ export class SocketsGroup {
         return this.router.rx(channel, (socket, data)=>receiver(socket, _p.getSocketGroupId(socket), data));
     }
 
-    createBeam(channel, opt={}) {
+    vaultChannel(channel, vault) {
         const _p = _privates.get(this);
-        
-        const beam = createVault({
-            ...opt,
-            hasMany:true,
-        });
 
         this.router.rx(channel, async (socket, { isSet, data })=>{
             const groupId = _p.getSocketGroupId(socket);
-            if (!isSet) { return beam.get(groupId, socket); }
-            return beam.set(data, groupId, socket);
+            if (!isSet) { return vault.get(groupId, socket); }
+            return vault.set(data, groupId, socket);
         });
 
         this.watch(async (socket, event, groupId)=>{
             if (event !== "reset") { return; }
-            this.router.tx(channel, [socket], await beam.get(groupId, socket));
+            this.router.tx(channel, [socket], await vault.get(groupId, socket));
         });
 
-        beam.on(({status, data}, groupId, sourceSocket)=>{
+        vault.on(({status, data}, groupId, sourceSocket)=>{
             if (status !== "ready" && status !== "expired") { return; }
             if (!sourceSocket) { return this.tx(channel, groupId, data); }
             else { return this.txBroad(channel, data, sourceSocket); }
         });
 
-        return beam;
+        return vault;
+    }
+
+    createBeam(channel, opt={}) {
+        return this.vaultChannel(channel, createVault({ ...opt, hasMany:true }));
     }
 
 }

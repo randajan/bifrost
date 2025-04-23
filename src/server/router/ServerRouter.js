@@ -91,17 +91,18 @@ export class ServerRouter {
         }
     }
 
-    createBeam(channel, opt={}) {
-
-        const beam = createVault(opt);
-
-        this.rx(channel, async (socket, { isSet, data })=>isSet ? beam.set(data, socket) : beam.get(socket));
-        beam.on(({status, data}, sourceSocket)=>{
+    vaultChannel(channel, vault) {
+        this.rx(channel, async (socket, { isSet, data })=>isSet ? vault.set(data, socket) : vault.get(socket));
+        vault.on(({status, data}, sourceSocket)=>{
             if (status !== "ready" && status !== "expired") { return; }
             this.txBroad(channel, data, sourceSocket);
         })
 
-        return beam;
+        return vault;
+    }
+
+    createBeam(channel, opt={}) {
+        return this.vaultChannel(channel, createVault(opt));
     }
 
 }
