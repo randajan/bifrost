@@ -127,15 +127,25 @@
   resolved "https://registry.yarnpkg.com/@esbuild/win32-x64/-/win32-x64-0.25.2.tgz#839f72c2decd378f86b8f525e1979a97b920c67d"
   integrity sha512-kM3HKb16VIXZyIeVrM1ygYmZBKybX8N4p754bw390wGO3Tf2j4L2/WYL+4suWujpgf6GBYs3jv7TyUivdd05JA==
 
+"@randajan/group-map@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@randajan/group-map/-/group-map-2.0.0.tgz#3d06cc38fe5d24e2db98ef844c4b97832f159624"
+  integrity sha512-GQz64rQSS3QwalElgfvqhrEMg+ADviQ31mGL2tbhSYJNc68wl09aQYAzg2xjEX/V85QhXwal35w0ThBRlPHHvA==
+
+"@randajan/props@^0.1.4":
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/@randajan/props/-/props-0.1.4.tgz#af4fa4327d69e1cbfd281df0c2e546cf6761f66d"
+  integrity sha512-F0qkf+s2p6SEO5nkHNCAL34/m39CAPF8j0+isx7TazvBHk8BXoCQxLEM5f6PL3G6R1TCSFVkqerI4T017yTQBA==
+
 "@randajan/queue@^0.1.6":
   version "0.1.6"
   resolved "https://registry.yarnpkg.com/@randajan/queue/-/queue-0.1.6.tgz#e587016b966181cc050319a6bfadafbeb81ad69b"
   integrity sha512-RbLmUuPEKrZYizlM/IucP2c+wDNPSGgy1JpKB7YEQYBrYp8lW60mqoD6D8gnr2Nm84P1B+EblX4h2r1LMozfPw==
 
-"@randajan/simple-lib@^3.0.2":
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/@randajan/simple-lib/-/simple-lib-3.0.2.tgz#3b685e18c94aaacaa39f093ffb9f0c7ff380c350"
-  integrity sha512-Qgt3/RhPIOUlH4Vst5Ak6uXCvl4wZuRh770aOCDZDNiL8vVTih6dYnAPcppOnIKnHaVgv3TgThxLankxYvS7JA==
+"@randajan/simple-lib@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/@randajan/simple-lib/-/simple-lib-3.3.0.tgz#8005fde3d48583f8e9f6f9984c98416046d0439c"
+  integrity sha512-larINB1cyuej5+gG/LrUaIEFxHHvYUOY/I49jUpuweCIUfFVTDUHYkN49LblXwrRzp89IDf6sCGf+5or9alP7w==
   dependencies:
     app-root-path "^3.1.0"
     chalk "^5.3.0"
@@ -145,10 +155,10 @@
     fs-extra "^11.2.0"
     live-server "^1.2.2"
 
-"@randajan/vault-kit@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@randajan/vault-kit/-/vault-kit-2.2.0.tgz#f91d669b356429c12b583fe1e1b73b60c9fb8e4f"
-  integrity sha512-OvSAYKu/C22y0FVJ54zjEnOaB1jXikBGmhat5kHH0XyfaLN43NsiBJAH34NAMfKbV2BtLc9YZ++suPN+VQW8Vg==
+"@randajan/vault-kit@^2.3.2":
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/@randajan/vault-kit/-/vault-kit-2.3.2.tgz#61002092db84d6192ca9234b15ac7007ea2d2e0c"
+  integrity sha512-bVVh+ecRNy/ramFlGoPNZsY4AXa/EfMK1fy+8iTiEumdHaX4AgBg21YIEdV5WWan9x5xzIHBHh3X+ceO9NCcmg==
 
 "@socket.io/component-emitter@~3.1.0":
   version "3.1.0"
@@ -344,6 +354,11 @@ chalk@^5.3.0:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.3.0.tgz#67c20a7ebef70e7f3970a01f90fa210cb6860385"
   integrity sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==
+
+chalk@^5.4.1:
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.4.1.tgz#1b48bf0963ec158dce2aacf69c093ae2dd2092d8"
+  integrity sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==
 
 chokidar@^2.0.4:
   version "2.1.8"

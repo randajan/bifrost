@@ -1,26 +1,53 @@
-import { emit, hear, msg, validateOnError } from "../../arc/tools";
+import { solid, solids, virtual } from "@randajan/props";
 import createVault from "@randajan/vault-kit";
 
+import { emit, hear, mapList, msg, validateOnError, validFn } from "../../arc/tools";
+import { MapSet } from "@randajan/group-map/set";
+
+
 const _privates = new WeakMap();
+
 
 export class ClientRouter {
 
     constructor(socket, onError) {
         onError = validateOnError(onError);
         
+
         const _p = {
             socket,
+            status:socket.connected ? "online" : "offline",
+            handlers:new MapSet(),
             channels:new Map(),
             onError
         }
 
-        Object.defineProperties(this, {
-            socket:{ value:socket }
-        });
+        const setStatus = (status)=>{
+            _p.status = status;
+            mapList(_p.handlers.get(status), socket, status);
+        }
+
+        solids(this, { socket });
+        virtual(this, "status", _=>_p.status);
 
         hear(socket, channel=>_p.channels.get(channel), onError);
 
+        socket.on("connect", _=>setStatus("online"));
+        socket.on("disconnect", _=>setStatus("offline"));
+        socket.on("connect_error", _=>setStatus("offline"));
+
+        socket.io.on("reconnect_attempt", _=>setStatus("pending"));
+        socket.io.on("reconnect_error", _=>setStatus("pending"));
+        socket.io.on("reconnect_failed", _=>setStatus("offline"));
+
         _privates.set(this, _p);
+    }
+
+    on(event, execute) {
+        validFn(execute, "ClientRouter.on(event, ...)");
+        const { handlers } = _privates.get(this);
+        handlers.add(event, execute);
+        return _=>handlers.delete(event, execute);
     }
     
     async tx(channel, transceiver) {
@@ -53,10 +80,14 @@ export class ClientRouter {
     }
 
     createBeam(channel, opt={}) {
-        return createVault({
+        const vault = createVault({
             ...opt,
             remote:this.vaultRemote(channel)
         });
+
+        this.on("online", _=>{ vault.reset(); });
+
+        return vault;
     }
 
 }

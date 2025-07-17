@@ -6,6 +6,11 @@ export const msg = (method, text, descObj={})=>{
     return `Bifrost${method}${desc} ${text}`;
 };
 
+export const validFn = (fn, name)=>{
+    if (typeof fn === "function") { return fn; }
+    throw Error(msg(name, "expect function"));
+}
+
 const packError = err=>{
     if (!(err instanceof Error)) { return err; }
     const e = {};
@@ -55,30 +60,15 @@ export const hear = (socket, getChannel, onError)=>{
     return _=>socket.off(_bifrostEvent, listener);
 }
 
-
-export const unregisterExe = (list, exe)=>{
-    const x = list.indexOf(exe);
-    if (x < 0) { return false; }
-    list.splice(x, 1);
-    return true;
-}
-
-export const registerExe = (list, exe)=>{
-    list.unshift(exe);
-    return _=>unregisterExe(list, exe);
-}
-
-export const mapList = async (map, list, ...args)=>{
-    for (let i=list.length-1; i>=0; i--) {
-        try { 
-            const res = await list[i](...args);
-            if (map && typeof res === "function") { map.push(res); }
-        }
-        catch(err) { console.warn(err); }
+export const mapList = async (list, ...args)=>{
+    if (!list) { return; }
+    for (const exe of [...list]) {
+        try { await exe(...args); } catch {}
     }
 }
 
 export const mapSockets = (sockets, execute, except)=>{
+    if (!sockets) { return []; }
     const result = [];
     for (const socket of sockets) {
         if (socket === except) { continue; }

@@ -1,116 +1,121 @@
-import { mapList, msg, registerExe } from "../../arc/tools";
+import { solid, solids } from "@randajan/props";
+
 import createVault from "@randajan/vault-kit";
+import { MapSet } from "@randajan/group-map/set";
+
+import { mapList, msg, validFn } from "../../arc/tools";
+
+
+
 
 const _privates = new WeakMap();
 
-const validateSocketGroupProp = socketGroupProp=>{
-    const type = typeof socketGroupProp;
-    if (type === "function") { return [socketGroupProp]; }
-    if (type === "string") { return [socket=>socket[socketGroupProp], socketGroupProp]; }
-    throw Error(msg("SocketGroup", `socketGroupProp must be typeof function or string. Got '${type}' instead`)); 
-}
 
 export class SocketsGroup {
 
-    constructor(router, socketGroupProp) {
+    constructor(router, getSocketGroupId) {
 
-        const [getSocketGroupId, groupProp] = validateSocketGroupProp(socketGroupProp);
+        if (typeof getSocketGroupId != "function") { msg("SocketGroup", `getSocketGroupId must be typeof function.`); }
 
-        const byId = new Map();
-        const bySocket = new Map();
-        const watchers = [];
+        const _p = { getSocketGroupId };
 
-        const remove = (fromId, socket, propagate=true)=>{
-            const from = byId.get(fromId);
-            if (!from) { return; }
-            from.delete(socket);
-            if (!from.size) { byId.delete(fromId); }
-            bySocket.delete(socket);
-            if (propagate) { mapList(undefined, watchers, socket, "farewell", undefined, fromId); }
+        _p.byId = new MapSet();
+        _p.bySocket = new Map();
+        _p.handlers = new MapSet();
+
+        _p.add = async socket=>{
+            const toId = await getSocketGroupId(socket);
+            if (toId == null) { return; }
+            _p.bySocket.set(socket, toId);
+            _p.byId.add(toId, socket);
+            mapList(_p.handlers.get("hi"), socket, toId);
         }
 
-        const add = (toId, socket, propagate=true)=>{
-            let to = byId.get(toId);
-            if (!to) { byId.set(toId, to = new Set()); }
-            to.add(socket);
-            bySocket.set(socket, toId);
-            if (propagate) { mapList(undefined, watchers, socket, "welcome", toId); }
+        _p.remove = socket=>{
+            const fromId = _p.bySocket.get(socket);
+            if (fromId == null) { return; }
+            _p.byId.delete(fromId, socket);
+            _p.bySocket.delete(socket);
+            mapList(_p.handlers.get("bye"), socket, undefined, fromId);
         }
 
-        const set = (fromId, socket)=>{
-            const toId = getSocketGroupId(socket);
+        _p.reset = async socket=>{
+            const fromId = _p.bySocket.get(socket);
+            if (fromId == null) { return _p.add(socket); }
+
+            const toId = await getSocketGroupId(socket);
+            if (toId == null) { return _p.remove(socket); }
+
             if (fromId === toId) { return; }
-            remove(fromId, socket, false);
-            add(toId, socket, false);
-            mapList(undefined, watchers, socket, "reset", toId, fromId);
+            _p.bySocket.set(socket, toId);
+            _p.byId.delete(fromId, socket);
+            _p.byId.add(toId, socket);
+            mapList(_p.handlers.get("reset"), socket, toId, fromId);
         }
 
-        const get = id=>byId.has(id) ? byId.get(id) : (new Set());
+        solids(this, { router });
 
-        Object.defineProperty(this, "router", {
-            value:router, enumerable:true
-        });
+        router.on("hi", socket=>{ _p.add(socket); });
+        router.on("bye", socket=>{ _p.remove(socket); });
 
-        router.welcome(socket=>{
-            if (groupProp) {
-                let currentId = socket[groupProp];
-                Object.defineProperty(socket, groupProp, {
-                    enumerable:true,
-                    get:_=>currentId,
-                    set:toId=>{
-                        const fromId = currentId;
-                        currentId = toId;
-                        set(fromId, socket);
-                    }
-                });
-            }
-            add(getSocketGroupId(socket), socket);
-            return _=>{ remove(bySocket.get(socket), socket); };
-        });
-
-        _privates.set(this, { bySocket, byId, getSocketGroupId, add, set, get, watchers });
+        _privates.set(this, _p);
 
     }
 
-    watch(watcher) {
-        const { watchers} = _privates.get(this);
-        return registerExe(watchers, watcher);
+    on(event, execute) {
+        validFn(execute, "Group.on(event, ...)");
+        const { handlers } = _privates.get(this);
+        handlers.add(event, execute);
+        return _=>handlers.delete(event, execute);
     }
 
-    reset(sockets) {
-        const { bySocket, set } = _privates.get(this);
-        if (!sockets) { bySocket.forEach(set); return; }
-        for (const socket of sockets) {
-            if (bySocket.has(socket)) { set(bySocket.get(socket), socket); }
-        }
+    async resetAll() {
+        const { bySocket, reset } = _privates.get(this);
+        await Promise.all([...bySocket].map(reset));
     }
 
-    resetSocket(socket) {
-        return this.reset([socket]);
+    async resetSockets(sockets) {
+        const { reset } = _privates.get(this);
+        await Promise.all([...sockets].map(reset));
     }
 
-    resetGroup(groupId) {
-        const { get } = _privates.get(this);
-        return this.reset(get(groupId));
+    async resetSocket(socket) {
+        const { reset } = _privates.get(this);
+        await reset(socket);
+    }
+
+    async reset(groupId) {
+        const { byId, reset } = _privates.get(this);
+        const sockets = byId.get(groupId);
+        if (!sockets) { return; }
+        await Promise.all([...sockets].map(reset));
     }
 
     get(groupId) {
-        return [..._privates.get(this).get(groupId)];
+        const { byId } = _privates.get(this);
+        return [ ...byId.get(groupId) ];
     }
 
     async tx(channel, groupId, transceiver, exceptSocket) {
-        const sockets = _privates.get(this).get(groupId);
+        const { byId } = _privates.get(this);
+        const sockets = byId.get(groupId);
         return this.router.tx(channel, sockets, transceiver, exceptSocket);
     }
 
     async txBroad(channel, transceiver, socket, excludeSocket=true) {
-        const socketId = _privates.get(this).getSocketGroupId(socket);
-        return this.tx(channel, socketId, transceiver, excludeSocket ? socket : undefined);
+        const { bySocket } = _privates.get(this);
+        const groupId = bySocket.get(socket);
+        if (groupId == null) { return; }
+        return this.tx(channel, groupId, transceiver, excludeSocket ? socket : undefined);
     }
 
     rx(channel, receiver) {
-        const _p = _privates.get(this);
-        return this.router.rx(channel, (socket, data)=>receiver(socket, _p.getSocketGroupId(socket), data));
+        const { bySocket } = _privates.get(this);
+        return this.router.rx(channel, (socket, data)=>{
+            const groupId = bySocket.get(socket);
+            if (groupId == null) { return; }
+            return receiver(socket, groupId, data);
+        });
     }
 
     vaultChannel(channel, vault) {
@@ -122,8 +127,7 @@ export class SocketsGroup {
             return vault.set(data, groupId, socket);
         });
 
-        this.watch(async (socket, event, groupId)=>{
-            if (event !== "reset") { return; }
+        this.on("reset", async (socket, groupId)=>{
             this.router.tx(channel, [socket], await vault.get(groupId, socket));
         });
 
@@ -132,7 +136,7 @@ export class SocketsGroup {
             if (!sourceSocket) { return this.tx(channel, groupId, data); }
             else { return this.txBroad(channel, data, sourceSocket); }
         });
-
+        
         return vault;
     }
 

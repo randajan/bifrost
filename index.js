@@ -20,6 +20,7 @@ slib(
             ]
         },
         demo:{
+            bundle:false,
             dir:isServer?"demo/backend":"demo/frontend",
             external:isServer?["chalk"]:[],
             loader:{

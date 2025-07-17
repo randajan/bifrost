@@ -1,9 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { beam } from "./beam";
+import { colorBeam, fieldBeam } from "./beam";
 import useBeam from "../../../dist/esm/client/react/index.mjs";
 
 export const TestBeam = ()=>{
-    const { data, act, reply, confirm } = beam.use();
+    const color = useBeam(colorBeam);
+    const { data, act, reply, confirm } = useBeam(fieldBeam);
+
+    console.log(color);
 
     const ref = useRef();
 
@@ -14,7 +17,7 @@ export const TestBeam = ()=>{
     }, [ref.current, data]);
 
     return (
-        <div className="App">
+        <div className="App" style={{backgroundColor:color?.data}}>
             <textarea ref={ref} onInput={onInput}/>
             <button onClick={confirm}>{JSON.stringify(reply)}</button>
         </div>
