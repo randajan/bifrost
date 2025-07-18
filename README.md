@@ -114,7 +114,10 @@ bifrost.rx("testChannel", (socket, { msg }) => {
 
 | Function | Description | Parameters | Return Value |
 |-|-|-|-|
-| `reset` | Resets the socket group by reassigning sockets to their corresponding groups based on the grouper function. | - | - |
+| `resetAll` | Reassigning allt sockets to their corresponding groups based on the grouper function. | - | - |
+| `reset` | Reassigning sockets in some group to their corresponding groups based on the grouper function. | `groupId` | - |
+| `resetSocket` | Reassigning socket to it's corresponding groups based on the grouper function. | `socket` - socket that should be reseted | - |
+| `resetSockets` | Reassigning sockets to their corresponding groups based on the grouper function. | `sockets` - Array of sockets that should be reseted | - |
 | `get` | Retrieves an array of sockets associated with the specified group ID. | `groupId` - ID of the group to retrieve sockets for. | Array of sockets associated with the specified group ID. |
 | `on` | Registers a function to execute when a new socket connects to the server. | `event` - 'hi', 'bye' or 'reset'<br>`execute` - Function to execute when a new socket connects. | `Function` - Function for unregistering the listener. |
 | `tx` | Sends data on the specified channel to the sockets associated with the specified group ID using the transceiver function. | `channel` - Name of the channel to send data on.<br>`groupId` - ID of the group to send data to.<br>`transceiver` - Function or code for sending data on the channel. | `Promise` - Asynchronous operation that resolves when all data has been sent. |
