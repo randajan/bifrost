@@ -34,7 +34,6 @@
   "dependencies": {
     "@randajan/group-map": "^2.0.0",
     "@randajan/props": "^0.1.4",
-    "@randajan/queue": "^0.1.6",
     "@randajan/vault-kit": "^2.3.2"
   },
   "files": [

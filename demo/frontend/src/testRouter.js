@@ -8,6 +8,7 @@ const socket = socketIOClient(`localhost:${info.port+1}`);
 
 //Create router using Socket.io socket
 export const bifrost = new BifrostRouter(socket);
+window.bifrost = bifrost;
 
 const msg = "TEST-MSG";
 console.log(`Client send: ${msg}`);

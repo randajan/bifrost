@@ -76,6 +76,19 @@ byColor.createBeam("field", {
     onRequest:(text)=>[text, {isDone:true, text}]
 });
 
+let currentIndex = 0;
+const testData = ["a", "b", "c", "d", "e"];
+
+const testBeam = bifrost.createBeam("test", {
+});
+
+setInterval(_=>{
+    const current = testData[currentIndex];
+    currentIndex ++;
+    if (currentIndex > 4) { currentIndex = 0; }
+    testBeam.set(current);
+}, 1000);
+
 
 // setInterval(_=>{
     

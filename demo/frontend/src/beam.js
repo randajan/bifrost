@@ -7,3 +7,5 @@ export const fieldBeam = window.beam = bifrost.createBeam("field", {
 });
 
 export const colorBeam = bifrost.createBeam("color", {});
+
+export const testBeam = bifrost.createBeam("test", {});

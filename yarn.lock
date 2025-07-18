@@ -137,11 +137,6 @@
   resolved "https://registry.yarnpkg.com/@randajan/props/-/props-0.1.4.tgz#af4fa4327d69e1cbfd281df0c2e546cf6761f66d"
   integrity sha512-F0qkf+s2p6SEO5nkHNCAL34/m39CAPF8j0+isx7TazvBHk8BXoCQxLEM5f6PL3G6R1TCSFVkqerI4T017yTQBA==
 
-"@randajan/queue@^0.1.6":
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/@randajan/queue/-/queue-0.1.6.tgz#e587016b966181cc050319a6bfadafbeb81ad69b"
-  integrity sha512-RbLmUuPEKrZYizlM/IucP2c+wDNPSGgy1JpKB7YEQYBrYp8lW60mqoD6D8gnr2Nm84P1B+EblX4h2r1LMozfPw==
-
 "@randajan/simple-lib@^3.3.0":
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/@randajan/simple-lib/-/simple-lib-3.3.0.tgz#8005fde3d48583f8e9f6f9984c98416046d0439c"
