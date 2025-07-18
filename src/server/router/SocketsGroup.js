@@ -25,7 +25,6 @@ export class SocketsGroup {
 
         _p.add = async socket=>{
             const toId = await getSocketGroupId(socket);
-            if (toId == null) { return; }
             _p.bySocket.set(socket, toId);
             _p.byId.add(toId, socket);
             mapList(_p.handlers.get("hi"), socket, toId);
@@ -33,19 +32,14 @@ export class SocketsGroup {
 
         _p.remove = socket=>{
             const fromId = _p.bySocket.get(socket);
-            if (fromId == null) { return; }
             _p.byId.delete(fromId, socket);
             _p.bySocket.delete(socket);
-            mapList(_p.handlers.get("bye"), socket, undefined, fromId);
+            mapList(_p.handlers.get("bye"), socket, fromId);
         }
 
         _p.reset = async socket=>{
             const fromId = _p.bySocket.get(socket);
-            if (fromId == null) { return _p.add(socket); }
-
             const toId = await getSocketGroupId(socket);
-            if (toId == null) { return _p.remove(socket); }
-
             if (fromId === toId) { return; }
             _p.bySocket.set(socket, toId);
             _p.byId.delete(fromId, socket);
