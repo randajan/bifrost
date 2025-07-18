@@ -122,7 +122,7 @@ export class SocketsGroup {
         const _p = _privates.get(this);
 
         this.router.rx(channel, async (socket, { isSet, data })=>{
-            const groupId = _p.getSocketGroupId(socket);
+            const groupId = await _p.getSocketGroupId(socket);
             if (!isSet) { return vault.get(groupId, socket); }
             return vault.set(data, groupId, socket);
         });
