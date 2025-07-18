@@ -93,12 +93,14 @@ export class SocketsGroup {
 
     get(groupId) {
         const { byId } = _privates.get(this);
-        return [ ...byId.get(groupId) ];
+        const sockets = byId.get(groupId);
+        return !sockets ? [] : [ ...sockets ];
     }
 
     async tx(channel, groupId, transceiver, exceptSocket) {
         const { byId } = _privates.get(this);
         const sockets = byId.get(groupId);
+        if (!sockets) { return; }
         return this.router.tx(channel, sockets, transceiver, exceptSocket);
     }
 
