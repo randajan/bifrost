@@ -77,11 +77,15 @@ export class ServerRouter {
     }
 
     vaultChannel(channel, vault) {
+         const _p = _privates.get(this);
+
         this.rx(channel, async (socket, { isSet, data })=>isSet ? vault.set(data, socket) : vault.get(socket));
 
         const txStatuses = ["init", "ready", "expired"];
-        vault.on(({status, data}, sourceSocket)=>{
+        vault.on(async ({status, data}, sourceSocket)=>{
             if (!txStatuses.includes(status)) { return; }
+            if (!_p.sockets.size) { return; }
+            if (status !== "ready" && vault.hasRemote) { return vault.get(socket); }
             this.txBroad(channel, data, sourceSocket);
         });
         return vault;

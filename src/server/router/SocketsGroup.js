@@ -128,8 +128,10 @@ export class SocketsGroup {
         });
 
         const txStatuses = ["init", "ready", "expired"];
-        vault.on(({status, data}, groupId, sourceSocket)=>{
+        vault.on(async ({status, data}, groupId, sourceSocket)=>{
             if (!txStatuses.includes(status)) { return; }
+            if (!_p.byId(groupId)?.size) { return; }
+            if (status !== "ready" && vault.hasRemote) { return vault.get(groupId, socket); }
             if (!sourceSocket) { return this.tx(channel, groupId, data); }
             else { return this.txBroad(channel, data, sourceSocket); }
         });
