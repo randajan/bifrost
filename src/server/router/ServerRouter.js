@@ -78,8 +78,10 @@ export class ServerRouter {
 
     vaultChannel(channel, vault) {
         this.rx(channel, async (socket, { isSet, data })=>isSet ? vault.set(data, socket) : vault.get(socket));
+
+        const txStatuses = ["init", "ready", "expired"];
         vault.on(({status, data}, sourceSocket)=>{
-            if (status !== "ready" && status !== "expired") { return; }
+            if (!txStatuses.includes(status)) { return; }
             this.txBroad(channel, data, sourceSocket);
         });
         return vault;

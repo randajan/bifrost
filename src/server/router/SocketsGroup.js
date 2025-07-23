@@ -127,8 +127,9 @@ export class SocketsGroup {
             this.router.tx(channel, [socket], await vault.get(groupId, socket));
         });
 
+        const txStatuses = ["init", "ready", "expired"];
         vault.on(({status, data}, groupId, sourceSocket)=>{
-            if (status !== "ready" && status !== "expired") { return; }
+            if (!txStatuses.includes(status)) { return; }
             if (!sourceSocket) { return this.tx(channel, groupId, data); }
             else { return this.txBroad(channel, data, sourceSocket); }
         });
