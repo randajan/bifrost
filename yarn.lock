@@ -150,10 +150,10 @@
     fs-extra "^11.2.0"
     live-server "^1.2.2"
 
-"@randajan/vault-kit@^2.3.2":
-  version "2.3.2"
-  resolved "https://registry.yarnpkg.com/@randajan/vault-kit/-/vault-kit-2.3.2.tgz#61002092db84d6192ca9234b15ac7007ea2d2e0c"
-  integrity sha512-bVVh+ecRNy/ramFlGoPNZsY4AXa/EfMK1fy+8iTiEumdHaX4AgBg21YIEdV5WWan9x5xzIHBHh3X+ceO9NCcmg==
+"@randajan/vault-kit@^2.3.3":
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/@randajan/vault-kit/-/vault-kit-2.3.3.tgz#3d39819e6f372ecc610818d9a6f4881bc800f9e1"
+  integrity sha512-9hTam0KYCf9vxc46GUtQBVv61aGlEVi4kg+MJDAEC/lP/IaqDSbb17Ehm1aCG5I7VCYU1IznRJYQHCiO8qgacQ==
 
 "@socket.io/component-emitter@~3.1.0":
   version "3.1.0"
