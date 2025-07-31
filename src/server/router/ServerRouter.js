@@ -85,7 +85,7 @@ export class ServerRouter {
         vault.on(async ({status, data}, sourceSocket)=>{
             if (!txStatuses.includes(status)) { return; }
             if (!_p.sockets.size) { return; }
-            if (status !== "ready" && vault.hasRemote) { return vault.get(socket); }
+            if (status !== "ready" && vault.hasRemote) { return vault.get(sourceSocket); }
             this.txBroad(channel, data, sourceSocket);
         });
         return vault;
