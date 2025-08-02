@@ -9,7 +9,7 @@
             "command": "npm publish --access=public",
             "dependsOn": [
                 "Create build",
-                "GIT push"
+                "Git push"
             ],
             "group": {
                 "kind": "build",
@@ -17,36 +17,59 @@
             }
         },
         {
-            "label": "Create build",
+            "label": "Git push",
             "type": "shell",
-            "command": "node index isBuild=true",
-        },
-        {
-            "label": "GIT push",
-            "type": "shell",
-            "command": "git add .; git commit -m 'Rise version'; git push -u origin main",
+            "command": "git push",
             "dependsOn": [
-                "Rise version"
-            ]
+                "Rise version",
+            ],
         },
         {
             "label": "Rise version",
             "type": "shell",
             "command": "npm version ${input:npmVersion}",
             "dependsOn": [
-                "GIT commit"
+                "Git commit"
             ]
         },
         {
-            "label": "GIT commit",
+            "label": "Git commit",
             "type": "shell",
-            "command": "git add .; git commit -m '${input:commit}'",
-        }
+            "command": "git",
+            "args": [
+                "commit", "-m",
+                "${input:commit}",
+            ],
+            "dependsOn": [
+                "Git add all",
+            ],
+        },
+        {
+            "label": "Git add all",
+            "type": "shell",
+            "command": "git add .",
+        },
+        {
+            "label": "Git set upstream",
+            "type": "shell",
+            "command": "git branch -u origin/${input:branch}"
+        },
+        {
+            "label": "Create build",
+            "type": "shell",
+            "command": "node index isBuild=true",
+        },
     ],
     "inputs": [
         {
             "id": "commit",
             "description": "Git commit message:",
+            "default": "",
+            "type": "promptString"
+        },
+        {
+            "id": "branch",
+            "description": "Git branch:",
             "default": "",
             "type": "promptString"
         },
