@@ -5,6 +5,7 @@ import { createServer as createServerHTTP } from "http";
 import { Server as IO } from "socket.io";
 
 import { BifrostRouter } from "../../../dist/esm/server/index.mjs";
+import { createBeam } from "../../../dist/esm/server/beam.mjs";
 
 //Create simple server
 const http = createServerHTTP();
@@ -55,7 +56,7 @@ bifrost.rx("testChannel", (socket, { msg })=>{
 });
 
 //Test socket state
-byColor.createBeam("color", {
+createBeam(byColor, "color", {
     remote:{
         pull:color=>{
             return color;
@@ -64,8 +65,8 @@ byColor.createBeam("color", {
 });
 
 //Test beam by group
-byColor.createBeam("field", {
-    reactions:{
+createBeam(byColor, "field", {
+    actions:{
         erase:_=>{
             return
         },
@@ -73,13 +74,14 @@ byColor.createBeam("field", {
             return text
         }
     },
-    onRequest:(text)=>[text, {isDone:true, text}]
+    unfold:(text)=>[text, {isDone:true, text}]
 });
 
 let currentIndex = 0;
 const testData = ["a", "b", "c", "d", "e"];
 
-const testBeam = bifrost.createBeam("test", {
+const testBeam = createBeam(bifrost, "test", {
+
 });
 
 setInterval(_=>{

@@ -17,7 +17,7 @@ export class SocketsGroup {
 
         if (typeof getSocketGroupId != "function") { msg("SocketGroup", `getSocketGroupId must be typeof function.`); }
 
-        const _p = { getSocketGroupId };
+        const _p = {};
 
         _p.byId = new MapSet();
         _p.bySocket = new Map();
@@ -47,7 +47,11 @@ export class SocketsGroup {
             mapList(_p.handlers.get("reset"), socket, toId, fromId);
         }
 
-        solids(this, { router });
+        solids(this, {
+            router,
+            getSocketGroupId,
+            getSocketsCount:(groupId)=>(_p.byId.get(groupId)?.size || 0)
+        });
 
         router.on("hi", socket=>{ _p.add(socket); });
         router.on("bye", socket=>{ _p.remove(socket); });
@@ -114,33 +118,8 @@ export class SocketsGroup {
         });
     }
 
-    vaultChannel(channel, vault) {
-        const _p = _privates.get(this);
-
-        this.router.rx(channel, async (socket, { isSet, data })=>{
-            const groupId = await _p.getSocketGroupId(socket);
-            if (!isSet) { return vault.get(groupId, socket); }
-            return vault.set(data, groupId, socket);
-        });
-
-        this.on("reset", async (socket, groupId)=>{
-            this.router.tx(channel, [socket], await vault.get(groupId, socket));
-        });
-
-        const txStatuses = ["init", "ready", "expired"];
-        vault.on(async ({status, data}, groupId, sourceSocket)=>{
-            if (!txStatuses.includes(status)) { return; }
-            if (!_p.byId.get(groupId)?.size) { return; }
-            if (status !== "ready" && vault.hasRemote) { return vault.get(groupId, sourceSocket); }
-            if (!sourceSocket) { return this.tx(channel, groupId, data); }
-            else { return this.txBroad(channel, data, sourceSocket); }
-        });
-        
-        return vault;
-    }
-
-    createBeam(channel, opt={}) {
-        return this.vaultChannel(channel, createVault({ ...opt, hasMany:true }));
+    createBeam() {
+        throw new Error(msg("createBeam", "was moved to @randajan/bifrost/server/beam"));
     }
 
 }

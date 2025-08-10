@@ -16,7 +16,9 @@ slib(
 
             entries: [
                 "server/index.js",
+                "server/beam.js",
                 "client/index.js",
+                "client/beam.js",
                 "client/react/index.js"
             ]
         },

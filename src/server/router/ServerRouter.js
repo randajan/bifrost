@@ -1,5 +1,4 @@
 import { solid, solids, virtuals } from "@randajan/props";
-import createVault from "@randajan/vault-kit";
 
 import { emit, hear, mapList, mapSockets, msg, validateOnError, validFn } from "../../arc/tools";
 import { SocketsGroup } from "./SocketsGroup";
@@ -65,7 +64,7 @@ export class ServerRouter {
 
     rx(channel, receiver) {
         const { channels } = _privates.get(this);
-        if (channels.has(channel)) { throw Error(msg("ServerRouter.rx(...)", `allready registered!`, {channel})); }
+        if (channels.has(channel)) { throw new Error(msg("ServerRouter.rx(...)", `allready registered!`, {channel})); }
 
         channels.set(channel, receiver);
 
@@ -76,27 +75,12 @@ export class ServerRouter {
         }
     }
 
-    vaultChannel(channel, vault) {
-         const _p = _privates.get(this);
-
-        this.rx(channel, async (socket, { isSet, data })=>isSet ? vault.set(data, socket) : vault.get(socket));
-
-        const txStatuses = ["init", "ready", "expired"];
-        vault.on(async ({status, data}, sourceSocket)=>{
-            if (!txStatuses.includes(status)) { return; }
-            if (!_p.sockets.size) { return; }
-            if (status !== "ready" && vault.hasRemote) { return vault.get(sourceSocket); }
-            this.txBroad(channel, data, sourceSocket);
-        });
-        return vault;
-    }
-
-    createBeam(channel, opt={}) {
-        return this.vaultChannel(channel, createVault(opt));
-    }
-
     createGroup(getSocketGroupId) {
         return new SocketsGroup(this, getSocketGroupId);
+    }
+
+    createBeam() {
+        throw new Error(msg("createBeam", "was moved to @randajan/bifrost/server/beam"));
     }
 
 }

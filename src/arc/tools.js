@@ -3,7 +3,7 @@ const _bifrostEvent = "__$$BifrostDataChannel__"; ///do not change
 export const msg = (method, text, descObj={})=>{
     let desc = "";
     for (let i in descObj) { desc += (desc ? ", " : "") + ` ${i} '${descObj[i]}'`; }
-    return `Bifrost${method}${desc} ${text}`;
+    return `Bifrost ${method}${desc} ${text}`;
 };
 
 export const validFn = (fn, name)=>{

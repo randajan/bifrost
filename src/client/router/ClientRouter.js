@@ -1,5 +1,5 @@
 import { solid, solids, virtual } from "@randajan/props";
-import createVault from "@randajan/vault-kit";
+
 
 import { emit, hear, mapList, msg, validateOnError, validFn } from "../../arc/tools";
 import { MapSet } from "@randajan/group-map/set";
@@ -60,7 +60,7 @@ export class ClientRouter {
 
     rx(channel, receiver) {
         const { channels } = _privates.get(this);
-        if (channels.has(channel)) { throw Error(msg("Router", `allready exist!`, {channel})); }
+        if (channels.has(channel)) { throw new Error(msg("Router", `allready exist!`, {channel})); }
 
         channels.set(channel, receiver);
 
@@ -71,23 +71,8 @@ export class ClientRouter {
         }
     }
 
-    vaultRemote(channel) {
-        return {
-            pull:_=>this.tx(channel, {isSet:false}),
-            push:data=>this.tx(channel, {isSet:true, data}),
-            init:set=>this.rx(channel, (socket, data)=>set(data))
-        }
-    }
-
-    createBeam(channel, opt={}) {
-        const vault = createVault({
-            ...opt,
-            remote:this.vaultRemote(channel)
-        });
-
-        this.on("online", _=>{ vault.reset(); });
-
-        return vault;
+    createBeam() {
+        throw new Error(msg("createBeam", "was moved to @randajan/bifrost/client/beam"));
     }
 
 }
