@@ -13,7 +13,7 @@ export const createBeam = (bifrost, channel, opt = {}) => {
         }
     });
 
-    bifrost.on("online", _ => { vault.reset(); });
+    bifrost.on("online", (socket, status) => { vault.reset(); });
 
     return vault;
 }
