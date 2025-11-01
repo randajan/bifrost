@@ -85,12 +85,18 @@ const testBeam = createBeam(bifrost, "test", {
 });
 
 setInterval(_=>{
+    if (testBeam.getStatus() === "destroyed") { return; }
     const current = testData[currentIndex];
     currentIndex ++;
     if (currentIndex > 4) { currentIndex = 0; }
     testBeam.set(current);
 }, 1000);
 
+
+setTimeout(_=>{
+    console.log("DESTROYED");
+    testBeam.destroy();
+}, 5000);
 
 // setInterval(_=>{
     
