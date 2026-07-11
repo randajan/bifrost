@@ -9,7 +9,7 @@ const _privates = new WeakMap();
 
 export class ServerRouter {
 
-    constructor(io, onError) {
+    constructor(io, onError, exposeCause=false) {
         onError = validateOnError(onError);
 
         const _p = {
@@ -30,7 +30,7 @@ export class ServerRouter {
 
         io.on("connection", async socket=>{
             _p.sockets.add(socket);
-            const deaf = hear(socket, channel=>_p.channels.get(channel), onError);
+            const deaf = hear(socket, channel=>_p.channels.get(channel), onError, exposeCause);
             socket.on("disconnect", async _=>{
                 deaf(socket);
                 await mapList(_p.handlers.get("bye"), socket);

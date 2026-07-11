@@ -20,7 +20,7 @@ const io = new IO(http, {
 });
 
 //Create router using Socket.io API
-const bifrost = new BifrostRouter(io);
+const bifrost = new BifrostRouter(io, _=>{}, true);
 const byColor = bifrost.createGroup(socket=>socket.color);
 
 
@@ -53,6 +53,10 @@ bifrost.rx("testChannel", (socket, { msg })=>{
 
     //Reply to received message
     return `Server reply to: '${msg}'`;
+});
+
+bifrost.rx("error", _=>{
+    throw new Error("WTF");
 });
 
 //Test socket state
@@ -95,7 +99,7 @@ setInterval(_=>{
 
 setTimeout(_=>{
     console.log("DESTROYED");
-    testBeam.destroy();
+    //testBeam.destroy();
 }, 5000);
 
 // setInterval(_=>{

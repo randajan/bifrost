@@ -1,5 +1,12 @@
 const _bifrostEvent = "__$$BifrostDataChannel__"; ///do not change
 
+class RemoteError extends Error {
+    constructor({ message, stack }={}) {
+        super(message);
+        this.stack = stack;
+    }
+}
+
 export const msg = (method, text, descObj={})=>{
     let desc = "";
     for (let i in descObj) { desc += (desc ? ", " : "") + ` ${i} '${descObj[i]}'`; }
@@ -13,20 +20,12 @@ export const validFn = (fn, name)=>{
 
 const packError = err=>{
     if (!(err instanceof Error)) { return err; }
-    const e = {};
-    for (let prop in Object.getOwnPropertyDescriptors(err)) { e[prop] = err[prop]; }
-    const { channel } = err;
-    const extend = msg("", "remote", {channel});
-    e.message = extend+" "+e.message;
-    e.stack = extend+" "+e.stack;
-    return e;
+    const { message, stack } = err;
+    return { message, stack };
 }
 
-const unpackError = err=>{
-    if (!err?.message) { return err; }
-    const e = new Error(err.message);
-    for (let prop in err) { e[prop] = err[prop]; }
-    return e;
+const unpackError = (errPack)=>{
+    return errPack ? new RemoteError(errPack) : undefined;
 }
 
 export const validateOnError = (onError)=>{
@@ -38,20 +37,21 @@ export const emit = async (socket, channel, body, onError)=>{
     return new Promise((res, rej)=>{
         socket.emit(_bifrostEvent, {channel, body}, (ok, response)=>{
             if (ok) { return res(response); }
-            const err = unpackError(response);
+            const cause = unpackError(response);
+            const err = new Error(`Remote error '${channel}'`, { cause });
             rej(err);
             onError(err);
         });
     });
 }
 
-export const hear = (socket, getChannel, onError)=>{
+export const hear = (socket, getChannel, onError, exposeCause=false)=>{
     const listener = async ({channel, body}, ack)=>{
         const receiver = getChannel(channel);
-        try { await ack(true, !receiver ? undefined : await receiver(socket, body)); }
+        if (!receiver) { return ack(false, { message:"Not found" }); }
+        try { await ack(true, await receiver(socket, body)); }
         catch (err) {
-            err.channel = channel;
-            await ack(false, packError(err));
+            await ack(false, exposeCause ? packError(err) : undefined);
             onError(err);
         }
     }

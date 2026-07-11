@@ -10,7 +10,7 @@ const _privates = new WeakMap();
 
 export class ClientRouter {
 
-    constructor(socket, onError) {
+    constructor(socket, onError, exposeCause=false) {
         onError = validateOnError(onError);
 
         const _p = {
@@ -31,7 +31,7 @@ export class ClientRouter {
         solids(this, { socket });
         virtual(this, "status", _ => _p.status);
 
-        hear(socket, channel => _p.channels.get(channel), onError);
+        hear(socket, channel => _p.channels.get(channel), onError, exposeCause);
 
         socket.on("connect", _ => setStatus("online"));
         socket.on("disconnect", _ => setStatus("offline"));

@@ -61,6 +61,18 @@ bifrost.rx("testChannel", (socket, { msg }) => {
 | `rx` | Registers a receiver function for handling data received on the specified channel. | `channel` - Name of the channel to receive data on.<br>`receiver` - Function for processing received data.<br>*Note:* If `receiver` is a function, it accepts the received data as a parameter. | `Function` - Function for unregistering the receiver from the specified channel. |
 | `createBeam` | Creates interface for easy data sharing | `channel` - Name of the used channel.<br>`options` - *check ription bellow* | `Beam` - Instance of the interface. |
 
+### Client Router constructor
+
+```javascript
+const bifrost = new BifrostRouter(socket, onError, exposeCause);
+```
+
+| Parameter | Description |
+|-|-|
+| `socket` | Socket.IO client socket used by the router. |
+| `onError` | Optional error handler called when Bifrost handles an error while sending or receiving data. |
+| `exposeCause` | Optional boolean, defaults to `false`. When `true`, errors thrown by this router's receivers are serialized and exposed to the remote caller as `error.cause`. |
+
 
 ## Server application
 
@@ -108,6 +120,52 @@ bifrost.rx("testChannel", (socket, { msg }) => {
 | `on` | Registers a function to execute when a new socket connects to the server. | `event` - 'hi' or 'bye'<br>`execute` - Function to execute when a new socket connects. | `Function` - Function for unregistering the listener. |
 | `createGroup` | Creates a new group for managing sockets with the specified grouper function. | `socketGroupProp` - Function that takes a socket object as input parameter and returns an its groupId | `SocketsGroup` - Instance of the created group. |
 | `createBeam` | Creates interface for easy data sharing | `channel` - Name of the used channel.<br>`options` - *check description bellow* | `Beam` - Instance of the interface. |
+
+### Server Router constructor
+
+```javascript
+const bifrost = new ServerRouter(io, onError, exposeCause);
+```
+
+| Parameter | Description |
+|-|-|
+| `io` | Socket.IO server instance used by the router. |
+| `onError` | Optional error handler called when Bifrost handles an error while sending or receiving data. |
+| `exposeCause` | Optional boolean, defaults to `false`. When `true`, errors thrown by this router's receivers are serialized and exposed to the remote caller as `error.cause`. |
+
+### Remote errors and `exposeCause`
+
+When a receiver registered with `rx(...)` throws, the caller of `tx(...)` is rejected with:
+
+```javascript
+Error(`Remote error '${channel}'`)
+```
+
+By default, Bifrost does not send the original thrown error back to the opposite side and the caller receives the remote error without `error.cause`. This is the safe production behavior because error messages and stack traces can contain internal file paths, implementation details, SQL fragments, tokens, or other sensitive data.
+
+If you explicitly need the remote caller to inspect the original error, enable `exposeCause` on the router that owns the throwing receiver:
+
+```javascript
+// Server exposes errors thrown by server-side receivers to clients
+const serverBifrost = new ServerRouter(io, onError, true);
+
+// Client exposes errors thrown by client-side receivers to the server
+const clientBifrost = new BifrostRouter(socket, onError, true);
+```
+
+With `exposeCause` enabled, the rejected remote error contains the serialized original error in `error.cause`:
+
+```javascript
+try {
+    await bifrost.tx("testChannel", { msg: "TEST" });
+} catch (error) {
+    console.error(error.message);        // Remote error 'testChannel'
+    console.error(error.cause?.message); // Original remote error message
+    console.error(error.cause?.stack);   // Original remote stack trace
+}
+```
+
+Keep `exposeCause` disabled for untrusted clients or public environments unless the remote side is allowed to see these details.
 
 
 ### Server Sockets Groups API
