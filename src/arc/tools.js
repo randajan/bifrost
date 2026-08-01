@@ -15,7 +15,7 @@ export const msg = (method, text, descObj={})=>{
 
 export const validFn = (fn, name)=>{
     if (typeof fn === "function") { return fn; }
-    throw Error(msg(name, "expect function"));
+    throw Error(msg(name, "expected a function"));
 }
 
 const packError = err=>{

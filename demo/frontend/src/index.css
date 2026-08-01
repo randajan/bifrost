@@ -13,6 +13,23 @@
     gap:1em;
 }
 
+.SpaceGrid {
+    display:grid;
+    grid-template-columns: repeat(2, minmax(160px, 240px));
+    gap:1em;
+}
+
+.SpaceField {
+    display:flex;
+    flex-flow:column;
+    gap:.5em;
+    color:white;
+}
+
+.SpaceField textarea {
+    min-height:5em;
+}
+
 #munin {
     display:block;
     font-size:24px;

@@ -150,10 +150,17 @@
     fs-extra "^11.2.0"
     live-server "^1.2.2"
 
-"@randajan/vault-kit@^3.4.1":
-  version "3.4.1"
-  resolved "https://registry.yarnpkg.com/@randajan/vault-kit/-/vault-kit-3.4.1.tgz#4fe39cbbd580ceb0bda1e94411ad0e29fbfb7fd2"
-  integrity sha512-xcUzc4Ut3F43uxgTmn85h/5IIYOE272Fpaiz7UFzWKXd77SIbOVDGerYJe68F0aBni45P4qtXda1qunYZZwHPA==
+"@randajan/sleep@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@randajan/sleep/-/sleep-1.0.2.tgz#398faa8a6b0883e4108d9c07a53377d1f1a2dc6f"
+  integrity sha512-+mybeVCLvi9kRhvlA/qjdRZ/FU+jTaYa10UnuI66SawzczQ1Hlq3uscXYXBznPZoUTujWZWizi6ttfC93H5JEw==
+
+"@randajan/vault-kit@^3.6.0":
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/@randajan/vault-kit/-/vault-kit-3.6.0.tgz#c9e0affc966a8b50cd691ac466cf3889f7152a8b"
+  integrity sha512-T673NoAyL2PxEDB9r4BlotlcD1VNIU6sHbrivG/RCgiDodRqhDUDl4SsI8txQceyMgZovNZACXqLd5WugMQyZQ==
+  dependencies:
+    "@randajan/sleep" "^1.0.2"
 
 "@socket.io/component-emitter@~3.1.0":
   version "3.1.0"

@@ -81,6 +81,16 @@ createBeam(byColor, "field", {
     unfold:(text)=>[text, {isDone:true, text}]
 });
 
+//Test indexed beam without socket groups
+createBeam(bifrost, "space", {
+    hasMany:true,
+    actions:{
+        erase:(_, id)=>({id, text:""}),
+        write:(text, id)=>({id, text})
+    },
+    unfold:"text"
+});
+
 let currentIndex = 0;
 const testData = ["a", "b", "c", "d", "e"];
 

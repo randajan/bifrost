@@ -12,3 +12,8 @@ export const fieldBeam = window.beam = createBeam(bifrost, "field", {
 export const colorBeam = createBeam(bifrost, "color", {});
 
 export const testBeam = createBeam(bifrost, "test", {});
+
+export const spaceBeam = createBeam(bifrost, "space", {
+    hasMany:true,
+    unfold:"text"
+});

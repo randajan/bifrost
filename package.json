@@ -27,8 +27,9 @@
     }
   },
   "scripts": {
-    "start": "set NODE_ENV=dev&& node ./index.js",
-    "build": "set NODE_ENV=prod&& node ./index.js"
+    "dev:server": "node index isServer=true",
+    "dev:client": "node index isServer=false",
+    "build": "node index isBuild=true"
   },
   "license": "MIT",
   "devDependencies": {
@@ -41,7 +42,8 @@
   },
   "dependencies": {
     "@randajan/group-map": "^2.0.0",
-    "@randajan/props": "^0.1.4"
+    "@randajan/props": "^0.1.4",
+    "@randajan/vault-kit": "^3.6.0"
   },
   "files": [
     "dist",
@@ -66,7 +68,5 @@
     "email": "jnranda@gmail.com",
     "url": "https://www.linkedin.com/in/randajan/"
   },
-  "peerDependencies": {
-    "@randajan/vault-kit": "^3.4.1"
-  }
+  "peerDependencies": {}
 }

@@ -7,8 +7,22 @@ import { MapSet } from "@randajan/group-map/set";
 
 const _privates = new WeakMap();
 
+/**
+ * @preserve
+ * Server-side Bifrost router for a Socket.IO server instance.
+ *
+ * @property {Object} io Socket.IO server instance used by this router.
+ * @property {Object[]} sockets Connected Socket.IO sockets.
+ * @property {number} socketsCount Number of connected sockets.
+ */
 export class ServerRouter {
 
+    /**
+     * @preserve
+     * @param {Object} io Socket.IO server instance.
+     * @param {Function} [onError] Error handler for send/receive failures.
+     * @param {boolean} [exposeCause=false] Exposes serialized receiver errors to the remote caller.
+     */
     constructor(io, onError, exposeCause=false) {
         onError = validateOnError(onError);
 
@@ -43,6 +57,14 @@ export class ServerRouter {
 
     }
 
+    /**
+     * @preserve
+     * Subscribes to server socket lifecycle events.
+     *
+     * @param {"hi"|"bye"} event Server event name.
+     * @param {Function} execute Listener callback.
+     * @returns {Function} Unsubscribe function.
+     */
     on(event, execute) {
         validFn(execute, "ServerRouter.on(event, ...)");
         const { handlers } = _privates.get(this);
@@ -50,6 +72,16 @@ export class ServerRouter {
         return _=>handlers.delete(event, execute);
     }
 
+    /**
+     * @preserve
+     * Sends data to selected sockets.
+     *
+     * @param {string} channel Channel name.
+     * @param {Iterable<Object>} sockets Target sockets.
+     * @param {*|Function} transceiver Data body, or a function that receives `send(body)` and the target socket.
+     * @param {Object} [excludeSocket] Socket to skip.
+     * @returns {Promise<Array<*>>} Remote receiver replies.
+     */
     async tx(channel, sockets, transceiver, excludeSocket) {
         const { onError } = _privates.get(this);
         const rnbl = typeof transceiver === "function";
@@ -58,13 +90,30 @@ export class ServerRouter {
         return Promise.all(mapSockets(sockets, exe, excludeSocket));
     }
 
+    /**
+     * @preserve
+     * Sends data to all connected sockets.
+     *
+     * @param {string} channel Channel name.
+     * @param {*|Function} transceiver Data body, or a function that receives `send(body)` and the target socket.
+     * @param {Object} [excludeSocket] Socket to skip.
+     * @returns {Promise<Array<*>>} Remote receiver replies.
+     */
     async txBroad(channel, transceiver, excludeSocket) {
         return this.tx(channel, _privates.get(this).sockets, transceiver, excludeSocket);
     }
 
+    /**
+     * @preserve
+     * Registers a receiver for a channel.
+     *
+     * @param {string} channel Channel name.
+     * @param {Function} receiver Receiver callback.
+     * @returns {Function} Unregister function.
+     */
     rx(channel, receiver) {
         const { channels } = _privates.get(this);
-        if (channels.has(channel)) { throw new Error(msg("ServerRouter.rx(...)", `allready registered!`, {channel})); }
+        if (channels.has(channel)) { throw new Error(msg("ServerRouter.rx(...)", `already registered!`, {channel})); }
 
         channels.set(channel, receiver);
 
@@ -75,12 +124,24 @@ export class ServerRouter {
         }
     }
 
+    /**
+     * @preserve
+     * Creates a server-side socket group.
+     *
+     * @param {Function} getSocketGroupId Resolves the group id for a socket.
+     * @returns {SocketsGroup}
+     */
     createGroup(getSocketGroupId) {
         return new SocketsGroup(this, getSocketGroupId);
     }
 
+    /**
+     * @preserve
+     * @deprecated Import `createBeam` from `@randajan/bifrost/server/beam`.
+     * @throws {Error}
+     */
     createBeam() {
-        throw new Error(msg("createBeam", "was moved to @randajan/bifrost/server/beam"));
+        throw new Error(msg("createBeam", "has been moved to @randajan/bifrost/server/beam"));
     }
 
 }
