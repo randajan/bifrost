@@ -18,6 +18,17 @@ export const validFn = (fn, name)=>{
     throw Error(msg(name, "expected a function"));
 }
 
+export const validStr = (str, name)=>{
+    if (typeof str !== "string") { throw Error(msg(name, "expects a string")); }
+    if (str.length <= 0) { throw Error(msg(name, "require non empty string")); }
+    return str;
+}
+
+export const validEnum = (any, enm=[], name)=>{
+    if (enm.includes(any)) { return any; }
+    throw Error(msg(name, `expects one of '${enm.join(",")}' but got '${any}' instead`));
+}
+
 const packError = err=>{
     if (!(err instanceof Error)) { return err; }
     const { message, stack } = err;
@@ -76,3 +87,6 @@ export const mapSockets = (sockets, execute, except)=>{
     }
     return result;
 }
+
+
+

@@ -1,59 +1,144 @@
 import createVault from "@randajan/vault-kit";
-import { pushWire, validateWire } from "../arc/wire.js";
+import { wirePush, wireReset, validateWire, wireDestroy } from "../arc/wire.js";
+import { validEnum } from "../arc/tools.js";
 
-const _txStatuses = ["init", "ready", "expired"];
 
-const isRouterGroup = bifrost=>{
+const _txStatuses = new Set(["ready", "expired", "init", "destroyed"]);
+
+
+const formatStatusCfg = (vault, beamOpt) => {
+    const { readyOp, expireOp, resetOp, destroyOp } = (beamOpt || {});
+
+    const { hasRemote } = vault;
+
+    const wPush = ["none", "reset", "push"];
+    const wBatch = hasRemote ? [...wPush, "renew"] : wPush;
+
+    return Object.freeze({
+        ready: validEnum(readyOp ?? "push", wPush, "readyOp"),
+        init: validEnum(resetOp ?? (hasRemote ? "renew" : "push"), wBatch, "resetOp"),
+        expired: validEnum(expireOp ?? "none", wBatch, "expireOp"),
+        destroyed: validEnum(destroyOp ?? "destroy", [...wPush, "destroy"], "destroyOp"),
+    })
+}
+
+const isRouterGroup = bifrost => {
     const { getSocketGroupId, getSocketsCount } = bifrost;
     return !!(getSocketGroupId && getSocketsCount);
 }
 
-const vaultChannelOne = (bifrost, channel, vault) => {
-    const { hasMany, hasRemote } = vault;
+const vaultChRx = (router, channel, vault, prefixer) => {
 
-    const cleanUp = bifrost.rx(channel, async (socket, wire) => {
-        const { isSet, data, id } = validateWire(wire, hasMany);
-        const args = hasMany ? [ id, socket ] : [socket];
-        return isSet ? vault.set(data, ...args) : vault.get(...args);
+    const getPort = !prefixer
+        ? path => vault.at(...path)
+        : async (path, socket) => vault.at(await prefixer(socket), ...path);
+
+    return router.rx(channel, async (socket, wire) => {
+        const { mode, data, path } = validateWire(wire, ["push", "pull"]);
+        const port = await getPort(path, socket);
+        return mode === "push" ? port.set(data, { socket }) : port.get({ socket });
     });
+}
 
-    vault.on(async ({ status, data }, ...args) => {
-        const id = hasMany ? args[0] : null;
-        const socket = hasMany ? args[1] : args[0];
-        if (status === "destroyed") { cleanUp(); }
-        if (!_txStatuses.includes(status)) { return; }
-        if (!bifrost.socketsCount) { return; }
-        if (status !== "ready" && hasRemote) { return vault.get(...args); }
-        bifrost.txBroad(channel, pushWire(data, hasMany, id), socket);
+const vaultChOn = (vault, cleanUp, filter, tx, statusCfg = {}, getWirePath = (p => p)) => {
+
+    vault.on(ctx => {
+        const { status, path, data, batch } = ctx;
+        if (!_txStatuses.has(status)) { return; }
+
+        if (status === "destroyed" && !path.length && (!batch || batch === "start")) {
+            cleanUp();
+        }
+
+        if (!filter(path)) { return; } //no listeners
+
+        const c = statusCfg[status];
+
+        if (!c || c === "none") { return; }
+
+        if (!batch || batch === "item") {
+            if (c === "renew") { return vault.at(...path).get(); }
+            if (c === "push") { return tx(wirePush(getWirePath(path), data), ctx); }
+        }
+
+        if (!batch || batch === "end") {
+            const toWire = c === "reset" ? wireReset : c === "destroy" ? wireDestroy : null;
+            if (toWire) { return tx(toWire(getWirePath(path)), ctx); }
+        }
+
     });
 
     return vault;
+
 }
 
-const vaultChannelMany = (bifrost, channel, vault) => {
+const vaultChGlob = (router, channel, vault, statusCfg = {}) => {
+    const cleanUp = vaultChRx(router, channel, vault);
+    const filter = _ => !!router.socketsCount;
+    const tx = (wire, { socket }) => {
+        return router.txBroad(channel, wire, socket);
+    }
 
-    const cleanRx = bifrost.router.rx(channel, async (socket, wire) => {
-        const { isSet, data } = validateWire(wire, false);
-        const groupId = await bifrost.getSocketGroupId(socket);
-        if (!isSet) { return vault.get(groupId, socket); }
-        return vault.set(data, groupId, socket);
-    });
-
-    const cleanReset = bifrost.on("reset", async (socket, groupId) => {
-        bifrost.router.tx(channel, [socket], pushWire(await vault.get(groupId, socket)));
-    });
-
-    vault.on(async ({ status, data }, groupId, sourceSocket) => {
-        if (status === "destroyed") { cleanRx(); cleanReset(); }
-        if (!_txStatuses.includes(status)) { return; }
-        if (!bifrost.getSocketsCount(groupId)) { return; }
-        if (status !== "ready" && vault.hasRemote) { return vault.get(groupId, sourceSocket); }
-        if (!sourceSocket) { return bifrost.tx(channel, groupId, pushWire(data)); }
-        else { return bifrost.txBroad(channel, pushWire(data), sourceSocket); }
-    });
-
-    return vault;
+    return vaultChOn(vault, cleanUp, filter, tx, statusCfg);
 }
+
+const vaultChGroup = (group, channel, vault, statusCfg = {}) => {
+
+    const getOnResetWire = vault.depth > 1
+        ? _=>wireReset()
+        : async (socket, groupId)=>wirePush([], await vault.at(groupId).get({ socket }));
+
+    const cleanRx = vaultChRx(group.router, channel, vault, group.getSocketGroupId);
+    const cleanReset = group.on("reset", async (socket, groupId) => {
+        const wire = await getOnResetWire(socket, groupId);
+        return group.router.tx(channel, [socket], wire);
+    });
+
+    const cleanUp = _ => { cleanRx(); cleanReset(); };
+    const filter = path => !path.length || group.getSocketsCount(path[0]); //path[0] = groupId
+    const tx = (wire, { path, socket }) => {
+        if (socket) { return group.txBroad(channel, wire, socket); }
+        if (path.length) { return group.tx(channel, path[0], wire); } //path[0] = groupId
+        return group.router.txBroad(channel, wire);
+    }
+    const getWirePath = path => path.slice(1);
+
+    return vaultChOn(vault, cleanUp, filter, tx, statusCfg, getWirePath);
+}
+
+/**
+ * @preserve
+ * @typedef {"none"|"reset"|"push"} BeamStatusOp
+ */
+
+/**
+ * @preserve
+ * @typedef {"none"|"reset"|"push"|"renew"} BeamRemoteStatusOp
+ */
+
+/**
+ * @preserve
+ * @typedef {"none"|"reset"|"push"|"destroy"} BeamDestroyOp
+ */
+
+/**
+ * @preserve
+ * Server-side Beam synchronization options.
+ *
+ * `push` sends a value to clients, `reset` invalidates client cache, `destroy`
+ * destroys the client cell/subtree, and remote-only `renew` refreshes the
+ * server Vault by calling `get()` again.
+ *
+ * During Vault batch events, `reset` and `destroy` are emitted once at batch
+ * end. `push` and `renew` operate on batch leaf items; Bifrost does not yet
+ * implement an aggregate batch push.
+ *
+ * @typedef {Object} ServerBeamOptions
+ * @property {BeamStatusOp} [readyOp="push"] Operation used when a cell becomes ready.
+ * @property {BeamRemoteStatusOp} [resetOp] Operation used for init/reset status. Defaults to `"renew"` for remote Vaults, otherwise `"push"`.
+ * @property {BeamRemoteStatusOp} [expireOp="none"] Operation used when a cached cell expires.
+ * @property {BeamDestroyOp} [destroyOp="destroy"] Operation used when a cell or subtree is destroyed.
+ */
 
 /**
  * @preserve
@@ -64,33 +149,44 @@ const vaultChannelMany = (bifrost, channel, vault) => {
  * @param {Object} bifrost Server Bifrost router or socket group.
  * @param {string} channel Beam channel name.
  * @param {import("@randajan/vault-kit").Vault} vault Vault instance.
+ * @param {ServerBeamOptions} [beamOpt={}] Beam synchronization options.
  * @returns {import("@randajan/vault-kit").Vault}
  */
-export const vaultChannel = (bifrost, channel, vault)=>{
-    return isRouterGroup(bifrost) ? vaultChannelMany(bifrost, channel, vault) : vaultChannelOne(bifrost, channel, vault);
+export const vaultChannel = (bifrost, channel, vault, beamOpt = {}) => {
+    const statusCfg = formatStatusCfg(vault, beamOpt);
+
+    if (isRouterGroup(bifrost)) {
+        return vaultChGroup(bifrost, channel, vault, statusCfg);
+    } else {
+        return vaultChGlob(bifrost, channel, vault, statusCfg);
+    }
 }
 
 /**
  * @preserve
  * Creates a server-side Beam, which is a Vault connected to a Bifrost channel.
  *
- * Options are passed to `@randajan/vault-kit`. `hasMany:true` is supported on a
- * normal server router. It is rejected for grouped beams because the group id is
- * already used as the internal Vault index.
+ * `vaultOpt` is passed to `@randajan/vault-kit`. Use `depth` for indexed
+ * Beam cells. Grouped server beams prepend the group id as an internal Vault
+ * path segment, so client paths never include the group id.
  *
  * @param {Object} bifrost Server Bifrost router or socket group.
  * @param {string} channel Beam channel name.
- * @param {Object} [opt={}] Vault options.
- * @param {boolean} [opt.hasMany=false] Enables indexed Beam cells on non-group beams.
+ * @param {Object} [vaultOpt={}] Vault options.
+ * @param {number} [vaultOpt.depth=0] Number of client-visible Beam path segments.
+ * @param {ServerBeamOptions} [beamOpt={}] Beam synchronization options.
  * @returns {import("@randajan/vault-kit").Vault}
- * @throws {Error} If `hasMany:true` is used with a socket group.
+ * @throws {Error} If `vaultOpt.hasMany` is used. Bifrost Beam uses `depth`.
  */
-export const createBeam = (bifrost, channel, opt = {}) =>{
+export const createBeam = (bifrost, channel, vaultOpt = {}, beamOpt = {}) => {
     const isGroup = isRouterGroup(bifrost);
-    if (isGroup && opt.hasMany === true) { throw new Error("Bifrost grouped beam does not support opt.hasMany"); }
+    if (vaultOpt.hasMany != null) { throw new Error("Bifrost beam uses opt.depth instead of opt.hasMany"); }
 
-    return vaultChannel(bifrost, channel, createVault({
-        ...opt,
-        hasMany:opt.hasMany || isGroup
-    }));
+    const optDepth = parseInt(vaultOpt?.depth);
+    const vOpt = {
+        ...vaultOpt,
+        depth: (isNaN(optDepth) ? 0 : optDepth) + (isGroup ? 1 : 0)
+    }
+
+    return vaultChannel(bifrost, channel, createVault(vOpt), beamOpt);
 };

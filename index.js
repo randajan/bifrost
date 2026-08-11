@@ -5,7 +5,7 @@ const { isBuild, isServer } = argv;
 slib(
     isBuild,
     {
-        port: 3005,
+        port: 3029,
         mode: isServer ? "node" : "web",
         rebuildBuffer: isServer ? 500 : 100,
         minify: false,

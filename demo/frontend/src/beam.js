@@ -14,6 +14,6 @@ export const colorBeam = createBeam(bifrost, "color", {});
 export const testBeam = createBeam(bifrost, "test", {});
 
 export const spaceBeam = createBeam(bifrost, "space", {
-    hasMany:true,
+    depth:1,
     unfold:"text"
 });

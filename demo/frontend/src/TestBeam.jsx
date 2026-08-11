@@ -3,7 +3,7 @@ import { colorBeam, fieldBeam, spaceBeam, testBeam } from "./beam";
 import useBeam from "../../../dist/esm/client/react/index.mjs";
 
 const SpaceField = ({ id, label })=>{
-    const { data, act, reply, confirm } = useBeam(spaceBeam, id);
+    const { data, status, act, reply, confirm } = useBeam(spaceBeam, [id]);
     const ref = useRef();
 
     const onInput = async ({target:el})=>act.write(el.value);
@@ -11,6 +11,8 @@ const SpaceField = ({ id, label })=>{
     useEffect(_=>{
         if (ref?.current) { ref.current.value = (data == null ? "" : data); }
     }, [ref.current, data]);
+
+    console.log(data, status);
 
     return (
         <label className="SpaceField">
@@ -39,6 +41,7 @@ export const TestBeam = ()=>{
             <div style={{color:"white"}}>{test?.data}</div>
             <textarea ref={ref} onInput={onInput}/>
             <button onClick={confirm}>{JSON.stringify(reply)}</button>
+            
             <div className="SpaceGrid">
                 <SpaceField id="profile" label="profile"/>
                 <SpaceField id="settings" label="settings"/>

@@ -170,7 +170,7 @@ byUser.on("reset", (socket, toId, fromId) => {});
 
 ## Beam
 
-Beam connects a client Vault to a server Vault over a Bifrost channel. The returned object is a Vault instance from `@randajan/vault-kit`, so Vault options and methods such as `get`, `set`, `act`, `reset`, `resetAll`, `on`, `ttl`, `actions`, and `unfold` keep their Vault behavior.
+Beam connects a client Vault to a server Vault over a Bifrost channel. The returned object is a Vault instance from `@randajan/vault-kit`, so Vault options and methods such as `get`, `set`, `act`, `reset`, `destroy`, `on`, `forEach`, `ttl`, `actions`, and `unfold` keep their Vault behavior.
 
 Use `createBeam` from the dedicated beam entrypoints. The legacy router method exists only as a migration error.
 
@@ -183,8 +183,8 @@ import { createBeam } from "@randajan/bifrost/server/beam";
 
 createBeam(bifrost, "profile", {
     remote:{
-        pull:socket => loadProfile(socket.data.userId),
-        push:(profile, socket) => saveProfile(socket.data.userId, profile)
+        pull:({ socket }) => loadProfile(socket.data.userId),
+        push:({ data, socket }) => saveProfile(socket.data.userId, data)
     }
 });
 ```
@@ -218,18 +218,47 @@ function ProfileForm({ profileBeam }) {
 }
 ```
 
+### Beam Sync Operations
+
+Server beams accept an optional fourth argument for passive synchronization behavior:
+
+```javascript
+createBeam(bifrost, "profile", vaultOpt, {
+    readyOp:"push",
+    resetOp:"renew",
+    expireOp:"none",
+    destroyOp:"destroy"
+});
+```
+
+| Option | Default | Allowed ops | Description |
+|-|-|-|-|
+| `readyOp` | `"push"` | `"none"`, `"reset"`, `"push"` | Runs when a cell becomes ready. |
+| `resetOp` | `"renew"` for remote Vaults, otherwise `"push"` | `"none"`, `"reset"`, `"push"`, remote-only `"renew"` | Runs when a cell is reset to `init`. |
+| `expireOp` | `"none"` | `"none"`, `"reset"`, `"push"`, remote-only `"renew"` | Runs when a cached cell expires. |
+| `destroyOp` | `"destroy"` | `"none"`, `"reset"`, `"push"`, `"destroy"` | Runs when a cell or subtree is destroyed. |
+
+Operations:
+
+- `"push"` sends the current value to clients.
+- `"reset"` invalidates client cache; active hooks pull again if they still need the value.
+- `"destroy"` destroys the matching client cell or subtree.
+- `"renew"` is server-side only and available only for remote Vaults. It calls `get()` again; any resulting `ready` event then follows `readyOp`.
+
+Batch behavior: Bifrost is batch-aware for subtree/root reset and destroy. `reset` and `destroy` are emitted once at the end of a Vault batch. `readyOp:"push"` does not send a real aggregate batch push yet; during batch events it sends leaf item pushes. Aggregate batch push is intentionally deferred.
+
 ### Indexed Beam
 
-On normal client/server beams, `hasMany:true` enables multiple cached cells on the same channel. The first extra Vault argument is the cell id.
+Use `depth` to create multiple cached cells on the same Beam channel. Address cells with Vault paths.
 
 Server:
 
 ```javascript
 createBeam(bifrost, "space", {
-    hasMany:true,
+    depth:1,
     remote:{
-        pull:(id, socket) => loadSpace(socket.data.userId, id),
-        push:(data, id, socket) => saveSpace(socket.data.userId, id, data)
+        pull:({ path:[spaceId], socket }) => loadSpace(socket.data.userId, spaceId),
+        push:({ path:[spaceId], data, socket }) => saveSpace(socket.data.userId, spaceId, data)
     }
 });
 ```
@@ -237,42 +266,44 @@ createBeam(bifrost, "space", {
 Client:
 
 ```javascript
-const spaceBeam = createBeam(bifrost, "space", { hasMany:true });
+const spaceBeam = createBeam(bifrost, "space", { depth:1 });
 
-await spaceBeam.get("profile");
-await spaceBeam.set({ text:"Hello" }, "profile");
-await spaceBeam.set({ compact:true }, "settings");
+await spaceBeam.at("profile").get();
+await spaceBeam.at("profile").set({ text:"Hello" });
+await spaceBeam.at("settings").set({ compact:true });
 ```
 
-With React, pass the id after the beam:
+With React, pass the path array after the beam:
 
 ```javascript
-const profile = useBeam(spaceBeam, "profile");
-const settings = useBeam(spaceBeam, "settings");
+const profile = useBeam(spaceBeam, ["profile"]);
+const settings = useBeam(spaceBeam, ["settings"]);
 ```
 
 ### Grouped Beam
 
-Grouped beams use a `SocketsGroup` as the transport target. The group id is already the internal Vault index on the server.
+Grouped beams use a `SocketsGroup` as the transport target. The group id is prepended as an internal server Vault path segment.
 
 ```javascript
 const byUser = bifrost.createGroup(socket => socket.data.userId);
 
 createBeam(byUser, "profile", {
     remote:{
-        pull:userId => loadProfile(userId),
-        push:(profile, userId) => saveProfile(userId, profile)
+        pull:({ path:[userId] }) => loadProfile(userId),
+        push:({ path:[userId], data }) => saveProfile(userId, data)
     }
 });
 ```
 
-Because the group id is reserved for this internal index, `hasMany:true` is rejected for grouped server beams. Use `hasMany:true` only with normal client/server beams, or use separate beam channels when grouped data needs separate authorization boundaries.
+Client paths do not include the group id. For a grouped Beam created with `depth:1`, the server Vault path is `[groupId, itemId]`, while the client path is `[itemId]`.
+
+When a socket changes group, grouped Beam sends a root reset wire to that socket. The client invalidates its local cache and active hooks pull only the values they still need.
 
 ## Beam Wire Compatibility
 
-Current Beam communication uses internal Bifrost Wire messages with version validation. This makes the Beam protocol stricter, but it also means current Beam clients and servers are not compatible with older Bifrost Beam implementations that did not send the Wire object.
+Current Beam communication uses internal Bifrost Wire messages with version validation. Wire modes are `"pull"`, `"push"`, `"reset"`, and `"destroy"`. Path shape is delegated to Vault Kit.
 
-Deploy matching client and server versions together when using Beam. Wire is internal to Bifrost and should not be used directly by application code.
+Current Beam is not compatible with older Bifrost Beam implementations that did not send the Wire object. Deploy matching client and server versions together when using Beam. Wire is internal to Bifrost and should not be used directly by application code.
 
 ## Development
 

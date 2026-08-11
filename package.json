@@ -43,7 +43,7 @@
   "dependencies": {
     "@randajan/group-map": "^2.0.0",
     "@randajan/props": "^0.1.4",
-    "@randajan/vault-kit": "^3.6.0"
+    "@randajan/vault-kit": "^4.2.1"
   },
   "files": [
     "dist",

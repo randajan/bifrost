@@ -62,8 +62,8 @@ bifrost.rx("error", _=>{
 //Test socket state
 createBeam(byColor, "color", {
     remote:{
-        pull:color=>{
-            return color;
+        pull:({ path })=>{
+            return path[0];
         }
     }
 });
@@ -74,7 +74,7 @@ createBeam(byColor, "field", {
         erase:_=>{
             return
         },
-        write:(text, id)=>{
+        write:({ data:text, path })=>{
             return text
         }
     },
@@ -82,11 +82,11 @@ createBeam(byColor, "field", {
 });
 
 //Test indexed beam without socket groups
-createBeam(bifrost, "space", {
-    hasMany:true,
+createBeam(byColor, "space", {
+    depth:1,
     actions:{
-        erase:(_, id)=>({id, text:""}),
-        write:(text, id)=>({id, text})
+        erase:({ path })=>({path, text:""}),
+        write:({ path, data:text })=>({path, text})
     },
     unfold:"text"
 });
@@ -108,7 +108,7 @@ setInterval(_=>{
 
 
 setTimeout(_=>{
-    console.log("DESTROYED");
+    console.log("server port", info.port+1);
     //testBeam.destroy();
 }, 5000);
 
@@ -121,3 +121,4 @@ setTimeout(_=>{
 //     });
     
 // }, 5000);
+

@@ -1,30 +1,32 @@
-const _version = "1";
+const _version = "2";
+const _modes = ["pull", "push", "reset", "destroy"];
+
 const valid = (pass, msg)=>{ if (!pass) { throw new Error(`Bifrost beam wire ${msg}`); } }
 
-const createWire = (isSet, data, hasMany, id)=>{
-    hasMany = hasMany === true;
-    const wire = { version:_version, isSet, hasMany };
-    if (isSet) { wire.data = data; }
-    if (hasMany) { wire.id = id; }
-    return wire;
+const createWire = (mode, path, data)=>{
+    const wire = { version:_version, mode };
+    if (path?.length) { wire.path = path; }
+    if (mode === "push") { wire.data = data; }
+    return Object.freeze(wire);
 }
 
 
-export const pushWire = (data, hasMany, id)=>createWire(true, data, hasMany, id);
-export const pullWire = (hasMany, id)=>createWire(false, undefined, hasMany, id);
+export const wirePush = (path, data)=>createWire("push", path, data);
+export const wirePull = (path)=>createWire("pull", path);
+export const wireReset = (path)=>createWire("reset", path);
+export const wireDestroy = (path)=>createWire("destroy", path);
 
-export const validateWire = (wire, targetHasMany, targetIsSet)=>{
-    targetHasMany = targetHasMany === true;
+export const validateWire = (wire, modes=_modes)=>{
 
     valid(wire && typeof wire === "object" && !Array.isArray(wire), "must be an object");
 
-    const { version, isSet, hasMany, data, id } = wire;
+    const { version, mode, data } = wire;
+    const path = wire.path == null ? [] : wire.path;
 
     valid(version === _version, `version mismatch. Expected '${_version}', received '${version}'`);
-    valid(typeof isSet === "boolean", "isSet must be a boolean");
-    valid(typeof hasMany === "boolean", "hasMany must be a boolean");
-    valid(targetIsSet == null || isSet === targetIsSet, `isSet mismatch. Expected '${targetIsSet}', received '${isSet}'`);
-    valid(hasMany === targetHasMany, `hasMany mismatch. Expected '${targetHasMany}', received '${hasMany}'`);
+    valid(Array.isArray(path), "path must be an Array");
 
-    return { isSet, data, id };
+    valid(modes.includes(mode), `mode must be one of '${modes.join(",")}'. Received '${mode}'`);
+
+    return Object.freeze({ mode, data, path });
 }
