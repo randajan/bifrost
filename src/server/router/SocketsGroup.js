@@ -1,9 +1,8 @@
 import { solid, solids } from "@randajan/props";
 
-import createVault from "@randajan/vault-kit";
 import { MapSet } from "@randajan/group-map/set";
 
-import { mapList, msg, validFn } from "../../arc/tools";
+import { mapList, msg, validFn, validResultAsNonEmptySet } from "../../arc/tools";
 
 
 
@@ -23,9 +22,14 @@ export class SocketsGroup {
      * @param {Object} router Parent server router.
      * @param {Function} getSocketGroupId Resolves the group id for a socket.
      */
-    constructor(router, getSocketGroupId) {
+    constructor(router, getSocketGroupId) { //, hasOneToMany=false
+
+        const hasOneToMany = !!hasOneToMany;
 
         if (typeof getSocketGroupId != "function") { msg("SocketGroup", `getSocketGroupId must be a function.`); }
+        if (hasOneToMany) {
+            getSocketGroupId = validResultAsNonEmptySet(getSocketGroupId, "getSocketGroupId(...)");
+        }
 
         const _p = {};
 
@@ -33,32 +37,45 @@ export class SocketsGroup {
         _p.bySocket = new Map();
         _p.handlers = new MapSet();
 
+        const byIdOp = !hasOneToMany
+            ? (op, id, socket)=>_p.byId[op](id, socket)
+            : (op, ids, socket)=>{
+                if (!ids) { _p.byId[op](undefined, socket); return; }
+                for (const id of ids) { _p.byId[op](id, socket); }
+            };
+        
+        const byIdCompare = !hasOneToMany
+            ? (t, f)=>t === f
+            : (t, f)=>t === f || (t?.size === f?.size && [...f].every(v => t.has(v)));
+
+
         _p.add = async socket=>{
             const toId = await getSocketGroupId(socket);
             _p.bySocket.set(socket, toId);
-            _p.byId.add(toId, socket);
+            byIdOp("add", toId, socket);
             mapList(_p.handlers.get("hi"), socket, toId);
         }
 
         _p.remove = socket=>{
             const fromId = _p.bySocket.get(socket);
-            _p.byId.delete(fromId, socket);
             _p.bySocket.delete(socket);
+            byIdOp("delete", fromId, socket);
             mapList(_p.handlers.get("bye"), socket, fromId);
         }
 
         _p.reset = async socket=>{
             const fromId = _p.bySocket.get(socket);
             const toId = await getSocketGroupId(socket);
-            if (fromId === toId) { return; }
+            if (byIdCompare(toId, fromId)) { return; }
             _p.bySocket.set(socket, toId);
-            _p.byId.delete(fromId, socket);
-            _p.byId.add(toId, socket);
+            byIdOp("delete", fromId, socket);
+            byIdOp("add", toId, socket);
             mapList(_p.handlers.get("reset"), socket, toId, fromId);
         }
 
         solids(this, {
             router,
+            hasOneToMany,
             getSocketGroupId,
             getSocketsCount:(groupId)=>(_p.byId.get(groupId)?.size || 0)
         });
@@ -93,7 +110,7 @@ export class SocketsGroup {
      */
     async resetAll() {
         const { bySocket, reset } = _privates.get(this);
-        await Promise.all([...bySocket].map(reset));
+        await Promise.all([...bySocket.keys()].map(reset));
     }
 
     /**
@@ -164,6 +181,7 @@ export class SocketsGroup {
         return this.router.tx(channel, sockets, transceiver, exceptSocket);
     }
 
+    //TODO txBroad now doesnt work with hasOneToMany
     /**
      * @preserve
      * Broadcasts to the group of the source socket.
@@ -176,8 +194,8 @@ export class SocketsGroup {
      */
     async txBroad(channel, transceiver, socket, excludeSocket=true) {
         const { bySocket } = _privates.get(this);
+        if (!bySocket.has(socket)) { return; }
         const groupId = bySocket.get(socket);
-        if (groupId == null) { return; }
         return this.tx(channel, groupId, transceiver, excludeSocket ? socket : undefined);
     }
 
@@ -192,8 +210,8 @@ export class SocketsGroup {
     rx(channel, receiver) {
         const { bySocket } = _privates.get(this);
         return this.router.rx(channel, (socket, data)=>{
+            if (!bySocket.has(socket)) { return; }
             const groupId = bySocket.get(socket);
-            if (groupId == null) { return; }
             return receiver(socket, groupId, data);
         });
     }

@@ -15,22 +15,36 @@ export const msg = (method, text, descObj={})=>{
 
 export const validFn = (fn, name)=>{
     if (typeof fn === "function") { return fn; }
-    throw Error(msg(name, "expected a function"));
+    throw new Error(msg(name, "expected a function"));
+}
+
+export const validSet = (any, name)=>{
+    if (any instanceof Set) { return any; }
+    throw new Error(msg(name, "expected an Set"));
 }
 
 export const validStr = (str, name)=>{
-    if (typeof str !== "string") { throw Error(msg(name, "expects a string")); }
-    if (str.length <= 0) { throw Error(msg(name, "require non empty string")); }
+    if (typeof str !== "string") { throw new Error(msg(name, "expects a string")); }
+    if (str.length <= 0) { throw new Error(msg(name, "require non empty string")); }
     return str;
 }
 
 export const validEnum = (any, enm=[], name)=>{
     if (enm.includes(any)) { return any; }
-    throw Error(msg(name, `expects one of '${enm.join(",")}' but got '${any}' instead`));
+    throw new Error(msg(name, `expects one of '${enm.join(",")}' but got '${any}' instead`));
+}
+
+export const validResultAsNonEmptySet = (fn, name)=>{
+    return async (...arg)=>{
+        const r = await fn(...arg);
+        if (r == null) { return; }
+        validSet(r, name);
+        if (r.size > 0) { return r; }
+    }
 }
 
 const packError = err=>{
-    if (!(err instanceof Error)) { return err; }
+    if (!(err instanceof new Error)) { return err; }
     const { message, stack } = err;
     return { message, stack };
 }
