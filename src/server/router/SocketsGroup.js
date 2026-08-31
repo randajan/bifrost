@@ -24,7 +24,7 @@ export class SocketsGroup {
      */
     constructor(router, getSocketGroupId) { //, hasOneToMany=false
 
-        const hasOneToMany = !!hasOneToMany;
+        const hasOneToMany = false; //!!hasOneToMany; THIS IS EXPERIMENTAL not completed solution
 
         if (typeof getSocketGroupId != "function") { msg("SocketGroup", `getSocketGroupId must be a function.`); }
         if (hasOneToMany) {

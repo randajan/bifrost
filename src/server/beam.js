@@ -91,7 +91,7 @@ const vaultChGroup = (group, channel, vault, statusCfg = {}) => {
     const cleanRx = vaultChRx(group.router, channel, vault, group.getSocketGroupId);
     const cleanReset = group.on("reset", async (socket, groupId) => {
         const wire = await getOnResetWire(socket, groupId);
-        return group.router.tx(channel, [socket], wire);
+        return group.router.tx(channel, [socket], wire); //send reset
     });
 
     const cleanUp = _ => { cleanRx(); cleanReset(); };
